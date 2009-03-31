@@ -1,0 +1,5 @@
+This directory holds or will hold the code for the CIL-to-Sexp
+compiler, written in OCaml. It's not a particularly large amount of
+code, but building it will be tricky as it requires a working
+installation of CIL and the OCaml compiler. No other code in Altitude
+is written in OCaml or uses CIL.

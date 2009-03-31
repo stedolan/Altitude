@@ -1,0 +1,44 @@
+Coding Style
+
+Much (most?) of Altitude is written in C, a language which provides a
+pretty spartan amount of abstractions. So, since there are no built-in
+conventions (packages, classes, etc.) to help write modular code, we
+have to define our own. Some basic ones are:
+
+Grouping code into files:
+
+  Try and group functions into files in sensible way. Each file should
+be more or less self-contained and provide well-defined interfaces to
+the other functions. If some functions used by the rest of the system
+are defined in somefile.c, their prototypes should be available in
+somefile.h and if tests are written (they should be), those should be
+in tests/somefile_test.c
+
+  Header files (somefile.h) should be well-commented with a useful
+description of everything declared in the file. Don't bother
+replicating all those comments in the implementation file
+(somefile.c), but do comment anything whose workings aren't
+immediately obvious.
+
+"Private" functions:
+
+  Functions or global variables which are declared using the "static"
+qualifier in C are private to that file. This is a useful way of
+indicating that a function is only for a modules internal usage, and
+not meant to be used elsewhere. It also means that the same name can
+be used for two different functions, if both are static. Do not put
+prototypes for static functions in header files (you don't want to
+tell others about them, they might change randomly).
+
+
+
+For more useful C practices, I highly recommend reading CodingStyle
+from the linux kernel sources. I don't agree with all of it, but it's
+still worth reading :P. See /usr/src/linux/Documentation/CodingStyle.
+
+
+One non-C piece of advice: Write good commit messages! This is really
+important. It's very useful to be able to glance at the timeline in
+Trac and know exactly what's happened. They should be descriptive but
+pretty short. If it takes more than a few lines for a commit message,
+you've got too much in that commit and it should be broken up.

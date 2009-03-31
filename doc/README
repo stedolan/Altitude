@@ -1,0 +1,18 @@
+This directory holds or will hold the documentation, design documents
+and random notes about Altitude. Some files and directories are:
+
+
+spec/
+ - the spec document
+
+TASKS
+ - a list of things which can be done by whoever has a bit of spare
+ time to hack on them. The format is one task per line, and delete the
+ line when you're done. The edit that creates the line should be
+ checked-in in the same commit that created the task, and the edit
+ that deletes it checked in with the code that performs the task.
+
+style
+ - some notes about coding style. Update whenever you feel like it or
+ if you have an idea which would make the code easier to understand.
+
