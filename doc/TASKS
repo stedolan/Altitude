@@ -1,0 +1,5 @@
+Random bits of coding, for someone to hack on.
+When something's done, delete the line from this file
+and check in your code with the deletion.
+
+bitops.h - expand to bitops.c (write a bitset type for arbitrarily sized bitmaps)
