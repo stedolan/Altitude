@@ -1,0 +1,70 @@
+\chapter{Virtual Machine Model}
+\section{Types}
+\subsection{Primitive Types}
+Ignore pointers for now, they fit in an int64.
+\subsection{Endian-ness}
+\subsection{Compound Types}
+\subsection{Arrays}
+Arrays of unknown size, paths modulus pathlen
+\subsection{Storage and the Typemap}
+typemap - tree structure, paths, paths as integers, walking the tree, etc.
+\subsection{{\tt sizeof} and byte offsets}
+
+\section{Memory}
+\subsection{Blobs}
+\subsubsection{Top-Type}
+\subsubsection{Garbage map}
+\subsubsection{Storage}
+\subsubsection{Miscellaneous properties}
+ID, blobtable idx, R/W flags, GC flags, free/alloc vmtimes.
+
+\subsection{Pointers}
+\subsubsection{Pointer properties}
+Blob, toptype, path, (offset when type is char array), ID, ptrtable
+(exposure to user-space; rationale). Read-only-ness of ptrtable.
+\subsubsection{Pointer operations}
+Semantics of get, set, index, offset, ptrdiff and cast upon ptr, blob, etc.
+\subsubsection{Allocation operations}
+Semantics of malloc, free upon ptr, blob, etc.
+
+\subsection{Garbage Collection}
+GC over ptrtable/blobtable, keeping list of active roots in ptrtable,
+using blob flags to mark-and-sweep. Rationale for mark-and-sweep
+(adequate performance when there's no garbage to collect).
+
+
+\section{Running Code}
+\subsection{Activation Records}
+program counter.
+\subsubsection{Call tree}
+Program stack is path through call tree, with indices giving a tree
+path.
+\subsubsection{Local variables}
+List of blobs, kept by frame, destroyed at return-time.
+\subsubsection{Global variables}
+Locals of a magic super-main scope, function statics are also globals
+(does CIL do this for us??).
+\subsection{Data Stack}
+Empties a lot. See CIL. Simple expressions.
+\subsection{Instructions}
+\subsubsection{Bytecode format}
+\subsubsection{Arithmetic instructions}
+Pure arithmetic, casts between arith types, comparisons. Only affect
+data stack. Not patched.
+\subsubsection{Pointer instructions}
+Previously described, get/set/index/offset/ptrdiff/ptrcast and
+malloc/free
+\subsubsection{Variable instructions}
+{g,}load{a,v,f}. Note pointer assignment for variable set.
+\subsubsection{Control instructions}
+Jump, jump-if-true. Switch compiles down to jumps (oh god, how
+slow. meh. possible future improvement (not really :P)). Call, Return
+instructions.
+\subsection{Library}
+\subsubsection{The C language library}
+Hosted vs. Freestanding implementations, C's need of a library,
+incompleteness.
+\subsubsection{Memory functions}
+Malloc, free (insns), memcpy, memmove (hax), etc.
+\subsubsection{Standard I/O}
+Oh god, more work... scanf/printf and friends.
