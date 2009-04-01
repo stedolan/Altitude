@@ -3,3 +3,4 @@ When something's done, delete the line from this file
 and check in your code with the deletion.
 
 bitops.h - expand to bitops.c (write a bitset type for arbitrarily sized bitmaps)
+sexp.h - write a sexp parser (interface and format are given)
