@@ -36,7 +36,9 @@ void sexp_free(struct sexp* x){
       break;
     }
   }
-  /* free parent */
+  /* possibly free filename (depends on reference count) */
+  atom_decref(x->filename);
+  /* free this node */
   free(x);
 }
 

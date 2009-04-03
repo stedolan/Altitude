@@ -34,6 +34,8 @@
  * "somefile.c". It is optional.
  */
 
+/* Filenames are stored as atoms, makes everything less painful */
+#include "atom.h"
 
 /* The possible tags */
 /* FIXME: very incomplete */
@@ -59,11 +61,10 @@ struct sexp{
   sexp_tag tag;
 
   /* location information */
-  /* FIXME: how are filenames allocated */
   /* If there is no location information for this sexp, filename is
    * NULL and line and bytepos are -1.
    */
-  char* filename;
+  atom filename;
   int line, bytepos;
 
   /* number of children */
