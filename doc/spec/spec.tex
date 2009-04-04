@@ -19,6 +19,46 @@
 \section{Structure}
 \subsection{Compiler}
 \subsection{Virtual Machine Model}
+\subsubsection{Layers}
+There are two logically separate layers to the VM's memory-checking.
+\subsubsection{Blobs}
+Each chunk of memory that is allocated by the program is a blob. There is a blob per global variable, one per local variable, and one per malloc(). We keep track of when blobs are created and destroyed, and we keep track of the particular blob to which each pointer points. Pointer arithmetic does not allow a pointer to jump from blob to blob (this is the case in working C programs. This failing to be the case is a very common source of bugs).
+\par
+A short summary of the structure of a blob:
+\begin{itemize}
+\item a piece of memory with an address and a length
+\item one of 3 states:
+  \begin{itemize}
+  \item uninitialised (the initial state, contains garbage, writes are OK, reads are probably errors)
+  \item valid (contains a single object, reads OK, writes OK)
+  \item freed (already been free()d or gone out of scope, reads errors, writes errors) 
+  \end{itemize}
+\end{itemize}
+\subsubsection{Objects}
+Within a blob, we keep track of the type of whatever was stored there last. For instance, if you allocate a blob of memory via malloc(), it is perfectly fine in C to use it for a while to store struct foo and then later to store a struct bar. However, it is an error to read from it as if it were a struct bar while it in fact contains a struct foo. You can't tell that a program isn't going to do these kind of things by simply type-checking it in C as you can in other languages, but we can check whether they happen at run-time. 
+\par
+A short summary of the structure of an object:
+\begin{itemize}
+\item a type - this is a C type like int, struct foo, char*, etc. 
+\item a garbage flag which says that the object is
+  \begin{itemize}
+  \item garbage (generally means uninitialised data, reads probably errors, writes OK) 
+  \item not garbage (reads and writes are OK) 
+  \end{itemize}
+\item compound objects like structs, unions or arrays will have a garbage bit for each element. 
+\end{itemize}
+The sort of errors that the blob-checking code catches are errors which might cause a segfault or the like. They are generally invalid and always bugs. However, it is possible for the object-checking code to mark things as wrong incorrectly.
+\par
+\subsubsection{Pointers}
+Pointers in the context of the VM are more than just the C pointers they represent. They have information stored with them to aid in the debugging of pointer operations performed by the interpreted program.
+\par
+The internal structure of a pointer in the context of the virtual machine is;
+\begin{itemize}
+\item the blob they point to 
+\item a "path", which describes the part of the blob that they refer to (e.g. "the foo member of the 4th struct in the array stored in this blob"
+\end{itemize}
+\subsubsection{Error Checking}
+One of the cool features of this VM is the error-checking model. Every instruction that is executed by the VM is checked both for valid memory addressing (the memory was previously allocated) and for valid typing (you didn't try to read a char from what you just set to int). 
 \subsection{Patches}
 \subsection{User interface}
 
