@@ -1,6 +1,4 @@
-#ifndef _ALTITUDE_ERROR_H
 #include "error.h"
-#endif
 #include "stdio.h"
 #include "stdlib.h"
 

@@ -1,6 +1,9 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include <ctype.h>
 #include "sexp.h"
+#include "error.h"
 
 
 /* The string representation of the tags */
@@ -29,7 +32,7 @@ static char* ltrim(char* str){
 static atom parse_filename(char* str){
   if(*str == '@'){
     str += 2; //eat the @ and the "
-    char* buf = strtok(start, "\"");
+    char* buf = strtok(str, "\"");
     atom at = atom_get(buf);
     return at;
   }else return 0;
