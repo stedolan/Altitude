@@ -24,5 +24,4 @@ typedef struct __atom{
 atom atom_get(char* string);
 atom atom_addref(atom);
 void atom_decref(atom);
-
 #endif

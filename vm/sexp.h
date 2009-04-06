@@ -12,7 +12,7 @@
  * looks like this (in approximate EBNF): 
  *  
  * sexp := '(' <ws>?
- *              (<location> <ws>)? 
+ *              (<location> <ws>)?
  *              <tag>
  *              (<ws> (<sexp> | <string> | <int>))* 
  *          <ws>? ')'
