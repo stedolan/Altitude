@@ -2,6 +2,10 @@
 #define _ALTITUDE_BITOPS_H
 /* Bit operations, used in various places */
 
+/* Is the argument a power of two? Nice hack, see
+   http://www.ugcs.caltech.edu/~wnoise/base2.html */
+#define IS_POWER_OF_TWO(x) !((x) & ((x) - 1))
+
 /* x & NBIT_MASK(n) is the low n bits of x */
 #define NBIT_MASK(n) ((1<<n) - 1)
 

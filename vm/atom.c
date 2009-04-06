@@ -6,7 +6,7 @@
 
 #include "atom.h"
 
-
+#define DEFAULT_SIZE 1024
 // hashtable mapping strings to atoms
 // Items are stored in linked lists using the "next" field of atoms
 struct{
@@ -20,7 +20,7 @@ static uint64_t max_id;
 /* make sure hashtable is initialised */
 static void table_init(){
   if (!atomtable.values){
-    atomtable.capacity = 1024;
+    atomtable.capacity = DEFAULT_SIZE;
     atomtable.emptybuckets = atomtable.capacity;
     atomtable.totalitems = 0;
     atomtable.values = calloc(atomtable.capacity, sizeof(atom));
@@ -39,6 +39,7 @@ static void table_rehash(){
   }else if (buckets_used < 15 && fullness < 25){
     newsize = atomtable.capacity / 2;
   }
+  if (newsize < DEFAULT_SIZE) newsize = DEFAULT_SIZE;
   if (newsize != atomtable.capacity){
     //Rehash, making bigger or smaller
     int oldcap = atomtable.capacity;
@@ -62,7 +63,14 @@ static void table_rehash(){
 }
 
 static uint32_t hash_string(char* str){
-  return 0;
+  //32-bit FNV hash
+  const uint32_t fnvprime = 16777619;
+  uint32_t hashcode = 2166136261;
+  while (*str){
+    hashcode ^= ((unsigned char)*str++);
+    hashcode *= fnvprime;
+  }
+  return hashcode;
 }
 
 atom atom_get(char* string){
