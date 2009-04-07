@@ -14,8 +14,31 @@ There are nigh-innumerable ways to shoot oneself in the foot when programming in
 This project aims to prevent a significant amount of bugs derived from a novice's lack of in-depth understanding of how C works. There are many cases where even experienced users are driven to frustration by subtle differences in how code is handled, and nobody should have to know exactly how every compiler their program may ever be run on will handle their code. To this end, our aims are to prevent implementation-specific code from being written, and to provide reasons why any given error is, in fact, an error.
 \section{Why this is hard}
 
-\section{C Peculiarities}
+The specification of the C language is much less defined than, say, Java or Python. Many questionable constructs, instead of causing an error, may or may not cause the program to fail. Equally many questionable constructs are entirely valid in C and give well-defined results.
+
+The vagueness of the specified behaviour of C in many areas is mostly due to a concern for efficiency. Imagine the efficiency of the code an optimiser could produce if it were allowed, even encouraged, to break in edge cases! It also means that the usual approach to some unknown facet of the language (write a small test-case, run it, see what happens) is entirely meaningless in C, as what happens may vary from compiler to compiler if it invokes some of the undefined parts of the C standard.
+
 \subsection{C's Taxonomy of Failure}
+C code can fail in various different ways. There is no uniform error reporting for this, in fact errors aren't necessarily detected. Again, this is for efficiency. Accurate programmers can write code that runs without wasting time on checking, say, array bounds.
+
+The types of unusual behaviour for a C program, as defined in the Standard, are:
+\begin{description}
+\item[Implementation-defined behaviour] This is some aspect of the language which the C standard leaves up to the particular implementation, with the proviso that each implementation must make a definite, documented choice. This is usually used in cases where there are multiple choices, and which is more efficient or easier to implement depends on historical baggage, or the underlying hardware. A typical example is whether or not the ``char'' type is signed.
+
+Programs are often targetted to a particular platform, in which case relying on implementation-defined behaviour is valid. However, portable programs must not rely on it.
+
+\item[Unspecified behaviour] This means that an implementation of C is free to choose from a well-defined set of choices. It doesn't have to document its choice, nor must it be consistent in choosing. This is usually used to give extra latitude for program transformation to optimising compilers. If a compiler knows in advance that it is allowed to make certain changes, it needn't bother to prove that the change won't affect the semantics of the program. A typical example is the order of evaluation of function arguments.
+
+Programs can invoke unspecified behaviour (it's generally hard to avoid), but should produce the same results whichever choice the C implementation makes.
+
+\item[Undefined behaviour] This means that anything can happen, according to a famous Usenet post it may cause ``demons to fly up your nose''. This is a bug in a C program. Since C programs do no error-checking other than that explicity written by the programmer, undefined behaviour can do anything. Common behaviours are program termination by segfault or similar, and silent data corruption.
+
+Programs must avoid undefined behaviour, a program whose function is unknown is not particularly useful. Most bugs in C programs manifest themselves as undefined behaviour resulting in abnormal termination or segfaults.
+\end{description}
+
+Altitude is designed to show up any bugs in the program, and give the user an opportunity to understand and debug them. To this end, it tries to be as evil as possible in implementation-defined and unspecified behaviour (so that the bugs are more likely to appear), and as nice as possible in undefined behaviour (typically by giving a very detailed description of the undefined behaviour, rather than ``Segmentation fault.''.
+
+An example of being-evil is Altitude's choice that ``char'' is signed. This will break programs that naively try to use characters as array indices, to, say, count character frequencies.
 
 
 \section{Structure}
