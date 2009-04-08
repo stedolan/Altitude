@@ -11,10 +11,8 @@
  * The format isn't quite standard Lisp-like sexps. A sexp in Altitude
  * looks like this (in approximate EBNF): 
  *  
- * sexp := '(' <ws>?
- *              (<location> <ws>)?
- *              <tag>
- *              (<ws> (<sexp> | <string> | <int>))* 
+ * sexp := '(' <location> ':' <tag> <ws>?
+ *          (<ws> (<sexp> | <string> | <int>))* 
  *          <ws>? ')'
  * location := '@' <string> ':' <int> ':' <int>
  * int := [0-9]+ [a decimal non-negative integer, fits in a 64-bit unsigned int]
