@@ -9,10 +9,28 @@
 /* x & NBIT_MASK(n) is the low n bits of x */
 #define NBIT_MASK(n) ((1<<n) - 1)
 
+/* FIXME: need a way to get the number of bits
+	  per byte on the system we're using...
+	  for now, I use the following two defs:
+*/
+
+/* number of bits in a byte */
+#define NBITS_BYTE 8
+
+/* number of bits in an int */
+#define NBITS_INT (sizeof(unsigned int) * NBITS_BYTE)
 
 /* bitset datatype */
 
-typedef struct bitset *bitset_t;
+struct bitset{
+  /* FIXME: change to whatever type is handiest. If you need a well-defined 
+     bit size, use uint32_t or whatever from stdint.h
+  */
+  unsigned int* data;
+  int capacity;
+};
+
+typedef struct bitset* bitset_t;
 
 
 /* Allocate a bitset, with the specified capacity */
