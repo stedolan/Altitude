@@ -11,10 +11,12 @@
  * The format isn't quite standard Lisp-like sexps. A sexp in Altitude
  * looks like this (in approximate EBNF): 
  *  
- * sexp := '(' <location> ':' <tag> <ws>?
- *          (<ws> (<sexp> | <string> | <int>))* 
- *          <ws>? ')'
- * location := '@' <string> ':' <int> ':' <int>
+ * sexp := '('
+ *          <location>? <tag> <ws>? 
+ *          ((<sexp> | <string> | <int>) <ws>? )* 
+ *          ')'
+ *            
+ * location := '@' <string> ':' <int> ':' <int> ':'
  * int := [0-9]+ [a decimal non-negative integer, fits in a 64-bit unsigned int]
  * string := a double-quoted string, where backslash is the escape character
  *           and double-quote and backslash are escaped.
@@ -27,7 +29,7 @@
  * followed by a closing parenthesis.
  * 
  * Location information is of the form:
- *     @"somefile.c":20:500 
+ *     @"somefile.c":20:500:
  * which means character 500 which is on line 20 of the file
  * "somefile.c". It is optional.
  */
@@ -70,6 +72,10 @@ struct sexp{
   /* array of children */
   struct sexp_element* elems;
 };
+
+/* Perform the requisite malloc() and memcpy() hacks to add the sexp_element
+   to the array of elements of the sexp */
+void sexp_add_elem(struct sexp_element*, struct sexp*);
 
 /* Parse a string into a newly-allocated sexp */
 struct sexp* sexp_parse(char*);
