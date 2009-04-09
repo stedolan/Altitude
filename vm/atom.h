@@ -14,6 +14,7 @@
  /* Atoms carry a unique 64-bit ID and a 32-bit precomputed hash */
 typedef struct __atom{
   char* string;
+  int length;
   uint64_t id;
   uint32_t hashcode;
 
@@ -21,7 +22,11 @@ typedef struct __atom{
   struct __atom* next; /* used for internal hashtable */
 } *atom;
 
+//Get a zero-terminated string
 atom atom_get(char* string);
+//Get a string with explicit length
+//Needed for strings with NULLs in them
+atom atom_get_len(char* string, int len);
 atom atom_addref(atom);
 void atom_decref(atom);
 #endif

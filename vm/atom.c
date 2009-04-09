@@ -62,11 +62,11 @@ static void table_rehash(){
   }
 }
 
-static uint32_t hash_string(char* str){
+static uint32_t hash_string(char* str, int len){
   //32-bit FNV hash
   const uint32_t fnvprime = 16777619;
   uint32_t hashcode = 2166136261;
-  while (*str){
+  for (int i=0;i<len;i++){
     hashcode ^= ((unsigned char)*str++);
     hashcode *= fnvprime;
   }
@@ -74,25 +74,31 @@ static uint32_t hash_string(char* str){
 }
 
 atom atom_get(char* string){
+  return atom_get_len(string, strlen(string)+1);
+}
+atom atom_get_len(char* string, int len){
   table_init();
   
   atom a = NULL;
 
   // Lookup in hashtable
-  uint32_t hashcode = hash_string(string);
+  uint32_t hashcode = hash_string(string, len);
   int arrpos = hashcode & (atomtable.capacity-1);
   for (atom i = atomtable.values[arrpos]; i != NULL; i = i->next){
-    if (!strcmp(string, i->string)){
-      a = i;
-      break;
+    if (len == i->length){
+      if (!memcmp(string, i->string, len)){
+	a = i;
+	break;
+      }
     }
   }
   if (!a){//not found, add to table
     a = malloc(sizeof(*a));
-    a->string = malloc(strlen(string)+1);
-    strcpy(a->string, string);
+    a->string = malloc(len);
+    memcpy(a->string, string, len);
     a->refcnt = 0;
     a->id = max_id++;
+    a->length = len;
     a->hashcode = hashcode;
 
     a->next = atomtable.values[arrpos];
@@ -117,6 +123,7 @@ void atom_decref(atom a){
   if (!a) return;
   table_init();
   a->refcnt--;
+  assert(a->refcnt >= 0);
   if (a->refcnt <= 0){
     int arrpos = a->hashcode & (atomtable.capacity-1);
     assert(atomtable.values[arrpos] != NULL);
