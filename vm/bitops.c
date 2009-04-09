@@ -29,7 +29,7 @@ int bitset_get(bitset_t b, int bit){
 	if(bit < 0 || bit >= b->capacity)
 	{
 		// index out of bounds
-		say(ASSERT,"index %d out of bounds (cap=%d) in bitset_get", bit, b->capacity);
+		sayf(ASSERT,"index %d out of bounds (cap=%d) in bitset_get", bit, b->capacity);
 		return -1;
 	}
 	
@@ -43,7 +43,7 @@ int bitset_get(bitset_t b, int bit){
 void bitset_set(bitset_t b, int bit, int val) {
 	if(bit < 0 || bit >= b->capacity)
 	{
-	  say(ASSERT,"index %d out of bounds (cap=%d) in bitset_set", bit, b->capacity);
+	  sayf(ASSERT,"index %d out of bounds (cap=%d) in bitset_set", bit, b->capacity);
 	}
 	
 	int n_arr = bit / NBITS_INT;				// the position in the array we wish to look at

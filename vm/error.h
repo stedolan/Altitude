@@ -45,20 +45,22 @@ typedef enum{
 
    Internal debugging information is printed with a file and line number.
 */
-#define say(category, format, ...)		\
-  do{						\
-  if (_should_say(E_##category)){		\
-  if ((E_##category) < 100){			\
-    fprintf(stderr, "[%03d] %s:%d: " format "\n",	\
-	    (E_##category), __FILE__, __LINE__,	\
-	    __VA_ARGS__);			\
-  }else{					\
-    fprintf(stderr, "[%03d] " format "\n",	\
-	    (E_##category), __VA_ARGS__);	\
-  }						\
-  _possibly_quit(E_##category);			\
-  }						\
+#define sayf(category, format, ...)			\
+  do{							\
+    if (_should_say(E_##category)){			\
+      if ((E_##category) < 100){			\
+	fprintf(stderr, "[%03d] %s:%d: " format "\n",	\
+		(E_##category), __FILE__, __LINE__,	\
+		__VA_ARGS__);				\
+      }else{						\
+	fprintf(stderr, "[%03d] " format "\n",		\
+		(E_##category), __VA_ARGS__);		\
+      }							\
+      _possibly_quit(E_##category);			\
+    }							\
   }while(0)
+
+#define say(category, mesg) sayf(category,"%s",mesg)
 
 //Internal functions, do not call directly
 int _should_say(message_category);
