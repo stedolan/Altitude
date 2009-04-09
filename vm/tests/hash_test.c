@@ -17,7 +17,11 @@ void print_table(ht_atom_t t){
 
 int main(){
   char* symbols[] = {"foo","bar","baz","awesomename","notasymbol"};
-  assert(atom_get("foasdf") == atom_get("foasdf"));
+  atom foasdf = atom_get("foasdf");
+  assert(atom_get("foasdf") == foasdf);
+  printf("foasdf refcnt: %d\n", foasdf->refcnt);
+  atom_decref(foasdf);
+  atom_decref(foasdf);
   ht_atom_t s = ht_atom_alloc();
   for (int i=0;i<sizeof(symbols)/sizeof(symbols[0]);i++){
     ht_atom_set(s, atom_get(symbols[i]), symbols[i]);
