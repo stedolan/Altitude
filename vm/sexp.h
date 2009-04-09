@@ -12,11 +12,11 @@
  * looks like this (in approximate EBNF): 
  *  
  * sexp := '('
- *          <location>? <tag> <ws>? 
- *          ((<sexp> | <string> | <int>) <ws>? )* 
- *          ')'
- *            
- * location := '@' <string> ':' <int> ':' <int> ':'
+ *              (<location> <ws>)?
+ *              <tag>
+ *              (<ws> (<sexp> | <string> | <int>))* 
+ *          <ws>? ')'
+ * location := '@' <string> ':' <int> ':' <int>
  * int := [0-9]+ [a decimal non-negative integer, fits in a 64-bit unsigned int]
  * string := a double-quoted string, where backslash is the escape character
  *           and double-quote and backslash are escaped.
@@ -29,7 +29,7 @@
  * followed by a closing parenthesis.
  * 
  * Location information is of the form:
- *     @"somefile.c":20:500:
+ *     @"somefile.c":20:500 
  * which means character 500 which is on line 20 of the file
  * "somefile.c". It is optional.
  */
@@ -44,6 +44,15 @@ typedef enum {S_STRUCT,S_UNION,S_LOOP} sexp_tag;
 /* Get the string representation of a tag */
 const char* sexp_tag_to_string(sexp_tag);
 
+/* location information */
+/* If there is no location information for this sexp, filename is
+ * NULL and line and bytepos are -1.
+ */
+struct location{
+  atom filename;
+  int line, bytepos;
+};
+
 struct sexp;
 typedef enum {ST_SEXP, ST_INTEGER, ST_STRING} sexp_elem_type;
 /* An element of a sexp - either a string, an integer or an
@@ -53,29 +62,20 @@ struct sexp_element{
   union sexp_child_data{
     struct sexp* sexp;
     int integer;
-    char* string;
+    atom string;
   } data;
 };
 struct sexp{
   /* tag */
   sexp_tag tag;
 
-  /* location information */
-  /* If there is no location information for this sexp, filename is
-   * NULL and line and bytepos are -1.
-   */
-  atom filename;
-  int line, bytepos;
+  struct location location;
 
   /* number of children */
   int nelems;
   /* array of children */
   struct sexp_element* elems;
 };
-
-/* Perform the requisite malloc() and memcpy() hacks to add the sexp_element
-   to the array of elements of the sexp */
-void sexp_add_elem(struct sexp_element*, struct sexp*);
 
 /* Parse a string into a newly-allocated sexp */
 struct sexp* sexp_parse(char*);
