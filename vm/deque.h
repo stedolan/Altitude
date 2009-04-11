@@ -97,7 +97,7 @@ void* pop_front(deque_t s){
 		s->size -= s->expansion;
 	}
 	
-  memmove(s->data, s->data+(sizeof(void*)), sizeof(void*)*s->location);
+    memmove(s->data, s->data+(sizeof(void*)), sizeof(void*)*s->location);
 	s->location -= 1;
 	return temp;
 }

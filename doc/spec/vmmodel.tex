@@ -1,37 +1,127 @@
 \chapter{Virtual Machine Model}
 \section{Types}
+Altitude includes all of C's primitive integer types and pointers (which are a logically seperate type, even though the are essentially an integer). No floating point types have been implemented due to time constraints, but their addition would not be a very complex matter.
+
+Altitude also includes C's methods of type-creation, such as the use of {\tt typedef} and {\tt struct} and so on.
 \subsection{Primitive Types}
 Ignore pointers for now, they fit in an int64.
+
 \subsection{Endian-ness}
+
 \subsection{Compound Types}
+
 \subsection{Arrays}
 Arrays of unknown size, paths modulus pathlen
+
 \subsection{Storage and the Typemap}
 typemap - tree structure, paths, paths as integers, walking the tree, etc.
+
 \subsection{{\tt sizeof} and byte offsets}
 
 \section{Memory}
-\subsection{Blobs}
-\subsubsection{Top-Type}
+\subsubsection{Layers}
+There are two logically separate layers to the VM's memory-checking.
+
+\subsubsection{Blobs}
+Each chunk of memory that is allocated by the program is a blob. There is a blob per global variable, one per local variable, and one per malloc(). We keep track of when blobs are created and destroyed, and we keep track of the particular blob to which each pointer points. Pointer arithmetic does not allow a pointer to jump from blob to blob (this is the case in working C programs. This failing to be the case is a very common source of bugs).
+\par
+A short summary of the structure of a blob:
+\begin{itemize}
+\item a piece of memory with an address and a length
+\item one of 3 states:
+  \begin{itemize}
+  \item uninitialised (the initial state, contains garbage, writes are OK, reads are probably errors)
+  \item valid (contains a single object, reads OK, writes OK)
+  \item freed (already been free()d or gone out of scope, reads errors, writes errors) 
+  \end{itemize}
+\end{itemize}
 \subsubsection{Garbage map}
 \subsubsection{Storage}
 \subsubsection{Miscellaneous properties}
 ID, blobtable idx, R/W flags, GC flags, free/alloc vmtimes.
 
+\subsubsection{Objects}
+Within a blob, we keep track of the type of whatever was stored there last. For instance, if you allocate a blob of memory via malloc(), it is perfectly fine in C to use it for a while to store struct foo and then later to store a struct bar. However, it is an error to read from it as if it were a struct bar while it in fact contains a struct foo. You can't tell that a program isn't going to do these kind of things by simply type-checking it in C as you can in other languages, but we can check whether they happen at run-time. 
+\par
+A short summary of the structure of an object:
+\begin{itemize}
+\item a type - this is a C type like int, struct foo, char*, etc. 
+\item a garbage flag which says that the object is
+  \begin{itemize}
+  \item garbage (generally means uninitialised data, reads probably errors, writes OK) 
+  \item not garbage (reads and writes are OK) 
+  \end{itemize}
+\item compound objects like structs, unions or arrays will have a garbage bit for each element. 
+\end{itemize}
+The sort of errors that the blob-checking code catches are errors which might cause a segfault or the like. They are generally invalid and always bugs. However, it is possible for the object-checking code to mark things as wrong incorrectly.
+
 \subsection{Pointers}
 \subsubsection{Pointer properties}
-Blob, toptype, path, (offset when type is char array), ID, ptrtable
+\subsubsection{Top-Type}
+In C, you can do weird things that are valid in certain situations with {\tt struct}. Top-Type exists to make sure Altitude can decipher such uses and correctly judge them to be valid or invalid.
+
+One such use is to use pointer casting and some insider knowledge to perform up-casting of {\tt struct}s when you have a pointer to one of the fields. It's possible to obtain the offset of the field within the {\tt struct} and subtract this amount from the pointer, leaving you with a pointer to the start of the struct. However, it is impossible to know that a pointer to a given thing is actually a pointer to that thing inside a {\tt struct}, so this use is only valid when the pointer is indeed to a thing inside a struct. The top-type of a pointer is the furthest type up the type-tree as which it can validly be treated.
+
+\subsubsection{Path}
+The hierarchy of types in a given C program is represented in an interesting way by Altitude, which we call a type-map. It is basically a ragged-right array of types, so that we can represent what type of thing a pointer points at in a neat way, using only two integers. This we call the path of the pointer. The first integer represents which top-type the pointer is pointing to, as described earlier. The second integer represents which item (if any) inside that top-type the pointer is pointing to.
+
+As an example, if you have a {\tt struct} with three {\tt int}s inside it, you might have a pointer in your code to the struct itself, which would have as a path the integer reprsenting the top-type (the {\tt struct} in this case) and a zero as the second part, since the struct itself is the zeroth member of that type list. However you might also have a pointer to one of the {\tt int}s within that struct, in which case the top-type part of the pointer path would be equivalent to the first instance, but the second part, representing which element within that type the pointer points at, would indicate which {\tt int} it is.
+\subsubsection{ID}
+\subsubsection{ptrtable}
+
 (exposure to user-space; rationale). Read-only-ness of ptrtable.
 \subsubsection{Pointer operations}
 Semantics of get, set, index, offset, ptrdiff and cast upon ptr, blob, etc.
 \subsubsection{Allocation operations}
 Semantics of malloc, free upon ptr, blob, etc.
 
+\subsubsection{Error Checking}
+One of the cool features of this VM is the error-checking model. Every instruction that is executed by the VM is checked both for valid memory addressing (the memory was previously allocated) and for valid typing (you didn't try to read a char from what you just set to int). 
+
+\subsection{Patches}
+The "reversible" part means we have to be able to go back to any earlier stage reasonably efficiently, which is going to make for some very interesting data structures.
+\par
+The state of the VM is all the information pertaining to the running program, such as the call stack, values of the local variables, values of global variables, and any data allocated on the heap.
+\par
+We need to be able to switch from state to state while still maintaining enough information to go back to earlier ones. One point to note is that we needn't store every state, it is possible to just store states every so often as if we can restore an early state we can run forward from that point to get later ones.
+\par
+We can store this information as a series of patches. A patch from state s1 to s2 is enough information such that, given all the information we have at state s1, we could build state s2, and given the information at state s2 we could build s1.
+\par
+A patch could be represented as "From s1 to s2, these variables were changed from "some values" to "some other values", "these bits of memory" were allocated and had "these bits of data" stored in them, "these bits of memory" were freed and had "these bits of data" at the time they were freed".
+\par
+The point here is, a patch from s1 to s2 only stores the data that changed between states s1 and s2. This means we can run the VM in a reasonable amount of ram.
+\par
+Patches, as described, have some interesting structure. Firstly, consider merging two patches. If we have two patches to the program state which come one after the other, we can merge them into one big patch from the original state into the newest one.
+\par
+Secondly, consider the null patch. That is, the patch which says "nothing changed". Now consider the initial state, that is, the state of the VM just upon entry to main(). This will be referred to as the "base state". The state of the program can be considered as a big patch against the base state. This is not just an idle observation, it means we can actually store the current state of the running program as just another patch, and we need no special data structures for it.
+\par
+Suppose we want to save a checkpoint to return to during the running of the program (it doesn't really matter where we do this, every N instructions would be reasonable). We can take the patch representing the current state, add it to a list of checkpoints, and set our "current state" patch to the null patch (it is now a patch against the most recently saved checkpoint). Thus, saving snapshots can be done really quickly.
+\par
+That works fine for writes, but for reads we're going to need to know the current value of the variables. If we just have access to a list of differences from the previous state, we'd have to work backwards through the checkpoint list to get the actual value of the variable. So, in parallel we maintain another "current state" patch, representing the current state of all the program's variables. We should maintain the property that merging the checkpoint list yields the current state (i.e. following the history from the beginning will leave us where we are now).
+\par
+Stepping backward means reversing some checkpoint patches, stepping forwards means applying them again. With some relatively simple algorithms, we can get a lot of behaviour "for free".
+\par
+For those who care (probably just me for now :P): patches form a group, in the abstract algebra sense. We have an associative operation (merging), an identity (the null patch), and an inverse (reversing the patch).
+\subsubsection{Merging patches}
+One necessary part is an algorithm to merge patches. Here's a rough pseudo-pseudo-code version of it:
+\par
+Patches consist of a set of variables, saying for each variable whether it was created (allocated) by this patch, destroyed (freed), or changed value.
+\par
+To merge two patches p1 and p2, then for each variable in either p1 or p2:
+\par
+\begin{enumerate}
+\item If it only appears in p1 or p2, then it should appear like that in the merged patch.
+\item If it was created in p1 and modified in p2, then it should appear as created, with the modified value, in the merged patch.
+\item If it was modified in p1 and destroyed in p2, then it should appear as destroyed, with the old value, in the merged patch.
+\item If it was modified in p1 and modified in p2, then it should appear as modified, from the oldest to the newest value, in the merged patch. 
+\end{enumerate}
+\par
+The other cases are impossible (can't be modified before being created, etc). 
+
 \subsection{Garbage Collection}
 GC over ptrtable/blobtable, keeping list of active roots in ptrtable,
 using blob flags to mark-and-sweep. Rationale for mark-and-sweep
 (adequate performance when there's no garbage to collect).
-
 
 \section{Running Code}
 \subsection{Activation Records}

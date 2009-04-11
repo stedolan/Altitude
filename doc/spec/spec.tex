@@ -43,86 +43,28 @@ An example of being-evil is Altitude's choice that ``char'' is signed. This will
 
 \section{Structure}
 \subsection{Compiler}
+The compiler in Altitude is written in OCaml, since the CIL library we're using is written in that language. Its purpose is to translate user-input C programs into a simplified s-expression syntax. For an explanation of the s-expressions we use, see the section entitled Compiler, later in the document.
 \subsection{Virtual Machine Model}
-\subsubsection{Layers}
-There are two logically separate layers to the VM's memory-checking.
-\subsubsection{Blobs}
-Each chunk of memory that is allocated by the program is a blob. There is a blob per global variable, one per local variable, and one per malloc(). We keep track of when blobs are created and destroyed, and we keep track of the particular blob to which each pointer points. Pointer arithmetic does not allow a pointer to jump from blob to blob (this is the case in working C programs. This failing to be the case is a very common source of bugs).
-\par
-A short summary of the structure of a blob:
-\begin{itemize}
-\item a piece of memory with an address and a length
-\item one of 3 states:
-  \begin{itemize}
-  \item uninitialised (the initial state, contains garbage, writes are OK, reads are probably errors)
-  \item valid (contains a single object, reads OK, writes OK)
-  \item freed (already been free()d or gone out of scope, reads errors, writes errors) 
-  \end{itemize}
-\end{itemize}
-\subsubsection{Objects}
-Within a blob, we keep track of the type of whatever was stored there last. For instance, if you allocate a blob of memory via malloc(), it is perfectly fine in C to use it for a while to store struct foo and then later to store a struct bar. However, it is an error to read from it as if it were a struct bar while it in fact contains a struct foo. You can't tell that a program isn't going to do these kind of things by simply type-checking it in C as you can in other languages, but we can check whether they happen at run-time. 
-\par
-A short summary of the structure of an object:
-\begin{itemize}
-\item a type - this is a C type like int, struct foo, char*, etc. 
-\item a garbage flag which says that the object is
-  \begin{itemize}
-  \item garbage (generally means uninitialised data, reads probably errors, writes OK) 
-  \item not garbage (reads and writes are OK) 
-  \end{itemize}
-\item compound objects like structs, unions or arrays will have a garbage bit for each element. 
-\end{itemize}
-The sort of errors that the blob-checking code catches are errors which might cause a segfault or the like. They are generally invalid and always bugs. However, it is possible for the object-checking code to mark things as wrong incorrectly.
-\par
+
+\subsubsection{Patches}
+Patches are our model of the execution of C programs, explained in great depth and detail in the VM Model section of this document. 
+
+A summary then: a patch in the context of the virtual machine is a difference between two states of the program. A state of the program includes things like the call stack and the local and global variables visible at a given time. Patches are bi-directional, which means you can utilise the same patch to go from a notional state one to state two and also to go from state two to state one. Execution of a program then can be viewed as a long string of patch applications, to get from the initial empty state to the end state. 
+
+One of the most useful and brilliant things about patches is that because they represent differences they can can be merged together to form a larger patch, still going between two notional states, but this time, those states are not adjacent in the actual execution of the program. This built-in compression of sorts is very useful, because, for example, you might not want to keep patches for each recursive step of a heavily recursive function, which might make thousands of recursive calls, but you do want to be able to step back over the computation. It's possible to simply merge each patch created as a recursive call executes with the patch taken as the function is first called, and you'll have a patch that goes straight from function call to result.
+
+Patches are explained in depth in the Patches subsection of the VM Model pages.
 \subsubsection{Pointers}
 Pointers in the context of the VM are more than just the C pointers they represent. They have information stored with them to aid in the debugging of pointer operations performed by the interpreted program.
-\par
+
 The internal structure of a pointer in the context of the virtual machine is;
 \begin{itemize}
 \item the blob they point to 
 \item a "path", which describes the part of the blob that they refer to (e.g. "the foo member of the 4th struct in the array stored in this blob"
+\item a unique ID
+\item a top-type (explained in the VM Model section)
 \end{itemize}
-\subsubsection{Error Checking}
-One of the cool features of this VM is the error-checking model. Every instruction that is executed by the VM is checked both for valid memory addressing (the memory was previously allocated) and for valid typing (you didn't try to read a char from what you just set to int). 
-\subsection{Patches}
-The "reversible" part means we have to be able to go back to any earlier stage reasonably efficiently, which is going to make for some very interesting data structures.
-\par
-The state of the VM is all the information pertaining to the running program, such as the call stack, values of the local variables, values of global variables, and any data allocated on the heap.
-\par
-We need to be able to switch from state to state while still maintaining enough information to go back to earlier ones. One point to note is that we needn't store every state, it is possible to just store states every so often as if we can restore an early state we can run forward from that point to get later ones.
-\par
-We can store this information as a series of patches. A patch from state s1 to s2 is enough information such that, given all the information we have at state s1, we could build state s2, and given the information at state s2 we could build s1.
-\par
-A patch could be represented as "From s1 to s2, these variables were changed from "some values" to "some other values", "these bits of memory" were allocated and had "these bits of data" stored in them, "these bits of memory" were freed and had "these bits of data" at the time they were freed".
-\par
-The point here is, a patch from s1 to s2 only stores the data that changed between states s1 and s2. This means we can run the VM in a reasonable amount of ram.
-\par
-Patches, as described, have some interesting structure. Firstly, consider merging two patches. If we have two patches to the program state which come one after the other, we can merge them into one big patch from the original state into the newest one.
-\par
-Secondly, consider the null patch. That is, the patch which says "nothing changed". Now consider the initial state, that is, the state of the VM just upon entry to main(). This will be referred to as the "base state". The state of the program can be considered as a big patch against the base state. This is not just an idle observation, it means we can actually store the current state of the running program as just another patch, and we need no special data structures for it.
-\par
-Suppose we want to save a checkpoint to return to during the running of the program (it doesn't really matter where we do this, every N instructions would be reasonable). We can take the patch representing the current state, add it to a list of checkpoints, and set our "current state" patch to the null patch (it is now a patch against the most recently saved checkpoint). Thus, saving snapshots can be done really quickly.
-\par
-That works fine for writes, but for reads we're going to need to know the current value of the variables. If we just have access to a list of differences from the previous state, we'd have to work backwards through the checkpoint list to get the actual value of the variable. So, in parallel we maintain another "current state" patch, representing the current state of all the program's variables. We should maintain the property that merging the checkpoint list yields the current state (i.e. following the history from the beginning will leave us where we are now).
-\par
-Stepping backward means reversing some checkpoint patches, stepping forwards means applying them again. With some relatively simple algorithms, we can get a lot of behaviour "for free".
-\par
-For those who care (probably just me for now :P): patches form a group, in the abstract algebra sense. We have an associative operation (merging), an identity (the null patch), and an inverse (reversing the patch).
-\subsubsection{Merging patches}
-One necessary part is an algorithm to merge patches. Here's a rough pseudo-pseudo-code version of it:
-\par
-Patches consist of a set of variables, saying for each variable whether it was created (allocated) by this patch, destroyed (freed), or changed value.
-\par
-To merge two patches p1 and p2, then for each variable in either p1 or p2:
-\par
-\begin{enumerate}
-\item If it only appears in p1 or p2, then it should appear like that in the merged patch.
-\item If it was created in p1 and modified in p2, then it should appear as created, with the modified value, in the merged patch.
-\item If it was modified in p1 and destroyed in p2, then it should appear as destroyed, with the old value, in the merged patch.
-\item If it was modified in p1 and modified in p2, then it should appear as modified, from the oldest to the newest value, in the merged patch. 
-\end{enumerate}
-\par
-The other cases are impossible (can't be modified before being created, etc). 
+
 \subsection{User interface}
 
 \input{compiler.tex}
