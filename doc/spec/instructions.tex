@@ -1,12 +1,29 @@
 \chapter{Instruction Set}
+The machine we're implementing supports the following instructions.
 \section{Arithmetic and Stack Instructions}
-Don't affect patches, pure stack instructions.
-arith ops %(+,-,*,/, etc)
-bitwise ops %(>>,<<,&,|,etc)
-arith casts %(int->short, char->unsigned long, etc)
-relational ops %(==, >=, <=, >, !=,  etc)
-logical ops %(&&, ||)
-stack ops %(pop-top)
+These don't affect patches, they are pure stack instructions. They don't, to borrow a metaphor from functional programing, have side-effects that persist beyond their use unless they are used in conjunction with one of the operators that effect the persistent machine state.
+
+For each of these operators, the argument or arguments are pushed on the data stack, the operation is done on the top n elements of the stack, and the result replaces these elements. In this listing, the items referred to are data on the stack, with the top being the first element. These, unless otherwise stated, correspond directly to the C operators.
+\subsection{Arithmetic Operators}
+\begin{itemize}
+\item '\%' result is the second element modulo the first
+\item '+' result is the second element plus the first
+\item '-' result is the second element minus the first
+\item '*' result is the second element multiplied by the first
+\item '/' result is the second element divided by the first (integer division)
+\item 'neg' unary minus, result is the negation of the element on top of the stack
+\end{itemize}
+\subsection{Bitwise Operators}
+ %(>>,<<,&,|,etc)
+\subsection{Arithmetic Casts}
+ %(int->short, char->unsigned long, etc)
+\subsection{Relational Operators}
+ %(==, >=, <=, >, !=,  etc)
+\subsection{Logical Operators}
+ %(&&, ||)
+\subsection{Stack Operators}
+ %(pop-top)
+
 \section{Pointer Instructions}
 deref, assign, index, offset, malloc, free, ptrdiff, ptrcast.
 \section{Variable Instructions}
