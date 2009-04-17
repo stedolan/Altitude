@@ -6,28 +6,71 @@ These don't affect patches, they are pure stack instructions. They don't, to bor
 For each of these operators, the argument or arguments are pushed on the data stack, the operation is done on the top n elements of the stack, and the result replaces these elements. In this listing, the items referred to are data on the stack, with the top being the first element. These, unless otherwise stated, correspond directly to the C operators.
 \subsection{Arithmetic Operators}
 \begin{itemize}
-\item '\%' result is the second element modulo the first
-\item '+' result is the second element plus the first
-\item '-' result is the second element minus the first
-\item '*' result is the second element multiplied by the first
-\item '/' result is the second element divided by the first (integer division)
-\item 'neg' unary minus, result is the negation of the element on top of the stack
+\item $\%$ result is the second item modulo the first
+\item $+$ result is the second item plus the first
+\item $-$ result is the second item minus the first
+\item $*$ result is the second item multiplied by the first
+\item $/$ result is the second item divided by the first (integer division)
 \end{itemize}
+
 \subsection{Bitwise Operators}
- %(>>,<<,&,|,etc)
+\begin{itemize}
+\item $\langle\langle$ shift the second item left by first places
+\item $\rangle\rangle$ shift the second item right by first places
+\item $\&$ $and$ the first and second items together
+\item $\|$ $or$ the first and second items together
+\item $!$ take the complement of the first item
+\item $\wedge$ xor the top two items together
+\end{itemize}
+
 \subsection{Arithmetic Casts}
  %(int->short, char->unsigned long, etc)
 \subsection{Relational Operators}
- %(==, >=, <=, >, !=,  etc)
+\begin{itemize}
+\item $==$ result is 1 if the two items are equivalent, 0 otherwise
+\item $<=$ result is 1 if the second item is less than or equal to the first, 0 otherwise
+\item $>=$ result is 1 if the second item is greater than or equal to the first, 0 otherwise
+\item $>$ result is 1 if the second item is greater than the first, 0 otherwise
+\item $<$ result is 1 if the second item is less than the first, 0 otherwise
+\item $!=$ result is 1 if the two items are not equivalent, 0 otherwise
+\end{itemize}
+
 \subsection{Logical Operators}
- %(&&, ||)
+\begin{itemize}
+\item $\&\&$ 1 if both items are 1, 0 otherwise
+\item $||$ 1 if either item is 1, false if both are 0
+\item $!$ logical inversion of the top item, 1 if 0 and 0 if 1
+\item $\wedge$ xor both items, 1 if they are different, 0 otherwise
+\end{itemize}
+
 \subsection{Stack Operators}
- %(pop-top)
+\begin{itemize}
+\item pop - remove the first element of the stack
+\end{itemize}
 
 \section{Pointer Instructions}
-deref, assign, index, offset, malloc, free, ptrdiff, ptrcast.
+This and subsequent sections contain operations which affect the machine state in such a way that patch contents are changed.
+
+\subsubsection{deref}
+Treating the item on top of the stack as a pointer, dereference it and replace it with the value of the memory it was pointing to.
+\subsubsection{assign}
+Treating the item on top of the stack as a value and the second as a pointer, place the value in the memory location pointed to by the pointer.
+\subsubsection{index}
+Similar to deref. Add the item on top of the stack to the second item and deref the result.
+\subsubsection{offset}
+Does this use two pointers? We can't have variable length items on the stack...
+\subsubsection{malloc}
+Allocate the number of bytes of memory indicated by the top stack element, replacing it with a pointer to the memory allocated.
+\subsubsection{free}
+Free the memory pointed to by the top element of the stack
+\subsubsection{ptrdiff}
+Take the difference between the top two elements of the stack, treating them as pointers, replacing them with a single element, the result.
+\subsubsection{ptrcast}
+Change the type of the item pointed to by the second variable on the stack (treating it as a pointer) to be equal to the string on the top of the stack.
+
 \section{Variable Instructions}
 loada, loadv, loadc.
 gloada, gloadv, gloadf.
+
 \section{Control flow instructions}
 jmp, jmpt, call, return.

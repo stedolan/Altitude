@@ -1,1 +1,32 @@
 \chapter{S-Expression Intermediate Representation}
+C code is loaded into the VM in an s-expression based format. This file and sexp.c define parsing and manipulation functions for Altitude's sexps. The format isn't quite standard Lisp-like sexps.
+
+\section{Grammar}
+A sexp in Altitude looks like this (in approximate EBNF.)
+ 
+\begin{list}{}{}
+\item sexp := '(' 
+\item ($\langle$location$\rangle$ $\langle$ws$\rangle$)?
+\item $\langle$tag$\rangle$
+\item ($\langle$ws$\rangle$ ($\langle$sexp$\rangle$ $\vert$ $\langle$string$\rangle$ $\vert$ $\langle$int$\rangle$))*
+\item $\langle$ws$\rangle$? ')'
+\item
+\item location := '@' $\langle$string$\rangle$ ':' $\langle$int$\rangle$ ':' $\langle$int$\rangle$
+\item
+\item int := [0-9]+ [a decimal non-negative integer, fits in a 64-bit unsigned int]
+\item
+\item string := a double-quoted string, where backslash is the escape character and double-quote and backslash are escaped.
+\item
+\item ws := any amount of newline, carriage return, tab or space
+\item
+\item tag := 'STRUCT' $\vert$ 'UNION' $\vert$ 'LOOP'
+\end{list}
+
+So, a sexp is an opening parenthesis, followed by optional location
+information, followed by a tag, followed by any number of children
+which are each integers, quoted strings or themselves sexps,
+followed by a closing parenthesis.
+
+\section{Location Information}
+Location information is of the form: @"somefile.c":20:500 which means character 500 which is on line 20 of the file
+"somefile.c". It is optional.
