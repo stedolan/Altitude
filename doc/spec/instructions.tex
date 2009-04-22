@@ -69,8 +69,24 @@ Take the difference between the top two elements of the stack, treating them as 
 Change the type of the item pointed to by the second variable on the stack (treating it as a pointer) to be equal to the string on the top of the stack.
 
 \section{Variable Instructions}
-loada, loadv, loadc.
-gloada, gloadv, gloadf.
+\subsubsection{loada}
+Look up the address of a local variable and push the address onto the top of the stack.
+\subsubsection{loadv}
+Look up a local variable and push its value onto the top of the stack.
+\subsubsection{loadc}
+Look up the value of a constant and push it onto the top of the stack. Constant values in C source code are not put into the bytecode inline, but are rather loaded by referencing a lookup-table.
+\subsubsection{gloada}
+Look up the address of a global variable and push the address onto the top of the stack.
+\subsubsection{gloadv}
+Look up a global variable and push its value onto the top of the stack.
+\subsubsection{gloadf}
 
 \section{Control flow instructions}
-jmp, jmpt, call, return.
+\subsubsection{jmp}
+Jump to a point in code.
+\subsubsection{jmpt}
+Jump to a point in code, if a given condition if true. All C loops are compiled into while loops, which in turn are represented as a jmpt out of the loop on the negation of the condition, with a jmp to the top of the loop at its end.
+\subsubsection{call}
+Call a function.
+\subsubsection{return}
+Return from a function call, possibly with a return value on the data stack.
