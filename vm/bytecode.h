@@ -118,5 +118,5 @@ static inline instruction build_instr_typed(opcode a, primtype b){
   return ((a & 0xff) << 8) | (b & 0xff);
 }
 static inline instruction build_instr_untyped(opcode a){
-  return build_instruction_typed(a,0);
+  return build_instr_typed(a,0);
 }

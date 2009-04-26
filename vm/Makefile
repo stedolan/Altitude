@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -ggdb -std=c99 -Wall -O
+CFLAGS = -ggdb -std=c99 -Wall -pedantic -Wextra
 
 OBJCOMP = $(CC) -c $(CFLAGS)
 
@@ -36,6 +36,12 @@ tests: tests/sexp_parse_test tests/hash_test tests/bitops_test
 
 error.o: error.c error.h
 	$(OBJCOMP) error.c
+
+main.o: main.c
+	$(OBJCOMP) main.c
+
+altitude: main.o error.o sexp.o hashtable.o bitops.o atom.o
+	gcc main.o error.o sexp.o hashtable.o bitops.o atom.o -o altitude
 
 clean:
 	rm *.o

@@ -68,7 +68,7 @@ typedef struct{ht_int_t ht; int idx;} ht_int_iter;
 
 ht_int_iter ht_int_begin(ht_int_t);
 /* Get the key or value at a particular place */
-const char* ht_int_getkey(ht_int_iter);
+uint64_t ht_int_getkey(ht_int_iter);
 void* ht_int_getvalue(ht_int_iter);
 /* Returns true if this iterator is still iterating (i.e. getkey/getvalue will return something useful, it's not past-the-end) */
 int ht_int_hasmore(ht_int_iter);

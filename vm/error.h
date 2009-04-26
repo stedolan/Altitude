@@ -19,6 +19,8 @@ typedef enum{
   E_ERROR, //internal consistency check, if one of these is printed bad
            //things have happened
   
+  E_SEXP, //s-expression parsing
+  
   /* 100-199
      User warnings: Altitude has detected that the user's code did
      something it probably didn't mean to. It is possible that these
@@ -40,8 +42,8 @@ typedef enum{
 
 /* Examples of use:
    say(DEBUG, "this isn't working");
-   say(ERROR, "%d should be %d, but isn't", someval, someotherval);
-   say(NULL_DEREF, "null pointer id #%d was dereferenced", ptr->id);
+   sayf(ERROR, "%d should be %d, but isn't", someval, someotherval);
+   sayf(NULL_DEREF, "null pointer id #%d was dereferenced", ptr->id);
 
    Internal debugging information is printed with a file and line number.
 */

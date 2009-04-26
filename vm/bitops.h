@@ -9,10 +9,6 @@
 /* x & NBIT_MASK(n) is the low n bits of x */
 #define NBIT_MASK(n) ((1<<n) - 1)
 
-/* FIXME: need a way to get the number of bits
-	  per byte on the system we're using...
-	  for now, I use the following two defs:
-*/
 
 /* number of bits in a byte */
 #define NBITS_BYTE 8

@@ -39,7 +39,26 @@
 
 /* The possible tags */
 /* FIXME: very incomplete */
-typedef enum {S_STRUCT,S_UNION,S_LOOP} sexp_tag;
+typedef enum {
+  /* types & declarations */
+  S_PROGRAM, S_STRUCT, S_UNION, S_TYPE, S_FIELDS, S_FIELD, S_COMPTYPE,
+  S_INT, S_VAR,
+
+
+  /* functions & code */
+  S_FUNCTION, S_FORMALS, S_LOCALS, S_BODY,
+
+  S_PLUS_INT, S_PLUS_SHORT, 
+  S_MINUS_INT, 
+  S_LT_INT,
+
+  S_DEREF, S_ASSIGN, S_INDEX, S_OFFSET, 
+
+  S_LOAD_L, S_LOAD_F, S_LOAD_G, S_CONSTANT,
+  S_CALL, S_CALLASSIGN, S_RETNONE, S_RETURN, S_BREAK,
+  S_GOTO, S_CONDGOTO, S_LABEL,
+
+} sexp_tag;
 
 /* Get the string representation of a tag */
 const char* sexp_tag_to_string(sexp_tag);

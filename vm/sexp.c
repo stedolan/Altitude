@@ -8,9 +8,45 @@
 
 /* The string representation of the tags */
 const char* sexp_names[]={
+  [S_PROGRAM] = "program",
   [S_STRUCT] = "struct",
   [S_UNION] = "union",
-  [S_LOOP] = "loop",
+  [S_TYPE] = "type",
+  [S_FIELDS] = "fields",
+  [S_FIELD] = "field",
+  [S_COMPTYPE] = "comptype",
+  [S_INT] = "int",
+  [S_VAR] = "var",
+
+
+
+  [S_FUNCTION] = "function",
+  [S_FORMALS] = "formals",
+  [S_LOCALS] = "locals",
+  [S_BODY] = "body",
+
+  [S_PLUS_INT] = "plus.int",
+  [S_PLUS_SHORT] = "plus.short",
+  [S_MINUS_INT] = "minus.int", 
+  [S_LT_INT] = "lt.int",
+
+  [S_DEREF] = "deref",
+  [S_ASSIGN] = "assign",
+  [S_INDEX] = "index", 
+  [S_OFFSET] = "offset",
+
+  [S_LOAD_L] = "load_l",
+  [S_LOAD_F] = "load_f",
+  [S_LOAD_G] = "load_g",
+  [S_CONSTANT] = "constant",
+  [S_CALL] = "callnone",
+  [S_CALLASSIGN] = "callassign",
+  [S_RETNONE] = "retnone",
+  [S_RETURN] = "return",
+  [S_BREAK] = "break",
+  [S_GOTO] = "goto", 
+  [S_CONDGOTO] = "condgoto",
+  [S_LABEL] = "label",
 };
 /* The number of tags, or, the length of sexp_names */
 static const int NTAGS = sizeof(sexp_names)/sizeof(sexp_names[0]);
@@ -36,7 +72,9 @@ static void p_litstr(char** pos, const char* str){
 //Strings are C-style double-quoted strings
 static atom p_string(char** pos){
   p_litstr(pos, "\"");
-  if (!*pos) return NULL;
+  if (!*pos){
+    return NULL;
+  }
   char* p = *pos;
   int capacity = 2000;
   char* buf = malloc(capacity);
@@ -63,10 +101,17 @@ static atom p_string(char** pos){
     buf[bufpos++] = c;
     p++;
   }
+  buf[bufpos++] = '\0';
   *pos = p;
   p_litstr(pos, "\"");
-  if (!*pos) return NULL;
-  else return atom_get_len(buf, bufpos);
+  atom ret;
+  if (!*pos){
+    ret = NULL;
+  }else{
+    ret = atom_get_len(buf,bufpos);
+  }
+  free(buf);
+  return ret;
 }
 
 //parse an integer
@@ -141,10 +186,26 @@ static struct sexp* p_sexp(char** pos){
   p_ws(pos);
   if (!*pos){
     free(ret);
+    say(SEXP, "Premature end of sexp");
     return NULL;
   }
 
   //Find the tag
+  char tagbuf[1000];
+  char* tagend = strpbrk(*pos, " \t\r\n()");
+  if (!tagend){
+    free(ret);
+    say(SEXP, "Can't find end of tag");
+    return NULL;
+  }
+  int taglen = tagend - *pos;
+  if (taglen > 900){
+    free(ret);
+    say(SEXP, "Tag is too large");
+    return NULL;
+  }
+  strncpy(tagbuf, *pos, taglen);
+  tagbuf[taglen] = 0;
   int tag = -1;
   for (int i=0;i<NTAGS;i++){
     if (!strncmp(*pos, sexp_names[i], strlen(sexp_names[i]))){
@@ -154,6 +215,7 @@ static struct sexp* p_sexp(char** pos){
   }
   if (tag == -1){
     free(ret);
+    sayf(SEXP, "Unkown sexp tag: %s", tagbuf);
     return NULL;
   }
   ret->tag = (sexp_tag) tag;
@@ -165,9 +227,15 @@ static struct sexp* p_sexp(char** pos){
   p_ws(pos);
   while (*pos && **pos != ')'){//while not error and not end of sexp...
     elems[size++] = p_sexp_element(pos);
+    if (!*pos){
+      say(SEXP, "error parsing sub-element");
+      free(elems);
+      free(ret);
+      return NULL;
+    }
     if (size == capacity){
       capacity *= 2;
-      elems = realloc(elems, capacity);
+      elems = realloc(elems, capacity * sizeof(struct sexp_element));
     }
     p_ws(pos);
   }
@@ -198,6 +266,7 @@ static void fill_in_location(struct sexp* s){
 
 struct sexp* sexp_parse(char* s){
   struct sexp* ret = p_sexp(&s);
+  say(SEXP, "parsed sexp");
   if (!ret){
     printf("Invalid sexp\n");
     return NULL;
