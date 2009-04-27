@@ -37,6 +37,9 @@
 /* Filenames are stored as atoms, makes everything less painful */
 #include "atom.h"
 
+/* for location information structures */
+#include "bytecode.h"
+
 /* The possible tags */
 /* FIXME: very incomplete */
 typedef enum {
@@ -55,7 +58,7 @@ typedef enum {
 
   S_DEREF, S_ASSIGN, S_INDEX, S_OFFSET, 
 
-  S_LOAD_L, S_LOAD_F, S_LOAD_G, S_CONSTANT,
+  S_LOAD_L, S_LOAD_F, S_LOAD_G, S_CONSTANT_INT,
   S_CALL, S_CALLASSIGN, S_RETNONE, S_RETURN, 
 
   /* control flow */
@@ -66,14 +69,6 @@ typedef enum {
 /* Get the string representation of a tag */
 const char* sexp_tag_to_string(sexp_tag);
 
-/* location information */
-/* If there is no location information for this sexp, filename is
- * NULL and line and bytepos are -1.
- */
-struct location{
-  atom filename;
-  int line, bytepos;
-};
 
 struct sexp;
 typedef enum {ST_SEXP, ST_INTEGER, ST_STRING} sexp_elem_type;

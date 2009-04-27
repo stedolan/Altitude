@@ -26,6 +26,11 @@ int main(int argc, char** argv){
     fprintf(stderr, "Couldn't parse s-expressions in %s", argv[1]);
     exit(1);
   }
-  sexp_dump(sexpcode);
-  sexp_free(sexpcode);
+
+  struct program* program = compile(sexpcode);
+  if (!program){
+    fprintf(stderr, "Couldn't compile\n");
+    exit(1);
+  }
+  program_dump(program);
 }

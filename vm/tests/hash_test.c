@@ -23,11 +23,11 @@ int main(){
   atom_decref(foasdf);
   atom_decref(foasdf);
   ht_atom_t s = ht_atom_alloc();
-  for (int i=0;i<sizeof(symbols)/sizeof(symbols[0]);i++){
+  for (int i=0;i<(int)(sizeof(symbols)/sizeof(symbols[0]));i++){
     ht_atom_set(s, atom_get(symbols[i]), symbols[i]);
   }
   print_table(s);
-  for (int i=0;i<sizeof(symbols)/sizeof(symbols[0]);i++){
+  for (int i=0;i<(int)(sizeof(symbols)/sizeof(symbols[0]));i++){
     assert(symbols[i] == ht_atom_get(s, atom_get(symbols[i])));
   }
   ht_atom_set(s, atom_get("bar"), "some other value");

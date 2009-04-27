@@ -11,6 +11,7 @@
 
 #include <stdint.h>
 #include "bitops.h"
+#include "atom.h"
 
 
 /* Userdata
@@ -19,27 +20,37 @@
  * pointer.
  */
 
-typedef enum primtype{
-  S_CHAR, /* plain "char" in Altitude is signed char */
-  U_CHAR,
-  S_SHORT,
-  U_SHORT,
+typedef enum{
+  PS_CHAR, /* plain "char" in Altitude is signed char */
+  PU_CHAR,
+  PS_SHORT,
+  PU_SHORT,
   //int and long are equivalent (both 32 bits)
-  S_INT,
-  U_INT,
+  PS_INT,
+  PU_INT,
   //long long is 64 bits
-  S_LONG_LONG,
-  U_LONG_LONG,
-  T_PTR,
-};
+  PS_LONG_LONG,
+  PU_LONG_LONG,
 
 
-static const int USERDATA_CHAR_LEN = sizeof(uint64_t);
-static const int USERDATA_SHORT_LEN = sizeof(uint64_t) / sizeof(uint16_t);
-static const int USERDATA_INT_LEN = sizeof(uint64_t) / sizeof(uint32_t);
-static const int USERDATA_LL_LEN = 1;
-static const int USERDATA_PTR_LEN = 1;
 
+  PT_PTR = 100 /* must come last; it's a bit of a special case */
+} primtype;
+
+/* A pointer in userspace. Not represented as a pointer in Altitude,
+   but as a 64-bit key in Altitude's internal pointer-table */
+typedef uint64_t userptr_t;
+
+
+
+#define USERDATA_CHAR_LEN sizeof(uint64_t)
+#define USERDATA_SHORT_LEN sizeof(uint64_t) / sizeof(uint16_t)
+#define USERDATA_INT_LEN sizeof(uint64_t) / sizeof(uint32_t)
+#define USERDATA_LL_LEN 1
+#define USERDATA_PTR_LEN 1
+
+/* number of primitive data (i.e. non-pointer) types */
+#define N_PRIMITIVE_DATA_TYPES 8
 
 typedef union {
   int8_t s_char[USERDATA_CHAR_LEN];
@@ -72,24 +83,48 @@ typedef uint32_t usertype_t;
    Altitude is running on. */
 typedef uint32_t usersize_t;
 
+static const int USER_SIZEOF_PTR = USERDATA_CHAR_LEN / USERDATA_PTR_LEN;
 
 
-typedef enum{TF_STRUCT, TF_UNION, TF_TYPEDEF, TF_PRIMITIVE} type_flavour;
+
+typedef enum{TF_STRUCT, TF_UNION, TF_ARRAY, TF_PRIMITIVE} type_flavour;
 /* the layout of a single type */
 struct type_layout{
   type_flavour flavour;
+  usersize_t size;
+
+  //possible values of the path of a pointer are 0 to nchildren
   int nchildren;
-  usertype_t* children;
+  usertype_t* children; //type of the object at each path
+  uint32_t* bytepos; //byte offsets
+  
 };
 
 /* the typemap for all types in the program */
 struct typemap{
   int ntypes;
+  /* The names are kept seperately to the layouts as multiple types
+     can share a layout (i.e. typedefs) */
+  atom* names; //names of the types
   struct type_layout* layouts; //an array which can be indexed by usertype_t
 };
 
+
+
 /* size of a user type */
 usersize_t user_sizeof(usertype_t);
+
+/* base name (after stripping off N layers of pointers) */
+atom get_base_type_name(usertype_t);
+
+struct type_layout* get_type_layout(usertype_t type);
+
+static inline int get_ptr_levels(usertype_t type){
+  return (type >> 24) & 0xff;
+}
+static inline int is_ptr_type(usertype_t type){
+  return get_ptr_levels(type) > 0;
+}
 
 
 
@@ -122,23 +157,57 @@ struct blob* blob_alloc(usersize_t length);
 
 
 
-/* A pointer in userspace. Not represented as a pointer in Altitude,
-   but as a 64-bit key in Altitude's internal pointer-table */
-typedef uint64_t userptr_t;
 
 
 struct pointer{
-  userptr_t id;
   struct blob* blob;
+  /*
+     There are two types of pointer, sensible and silly.
+     Sensible pointers are created via valid pointer operations such
+     as indexing into an array by an amount that doesn't exceed array
+     bounds. However, in C you can do a lot of strange, strange operations.
+     For instance, it is legal to increment a pointer well past the
+     end of the array it references, then decrement it again and
+     dereference it once it gets back into the array's range.
 
-  usertype_t top_type;
-  uint32_t path;
+     So, the representation of offsets within a blob has two cases:
+     When "path" is positive or zero, the pointer is sensible. The
+     "type" field refers to the type of the top-level object in the
+     blob and the "path" field refers to the exact part (as defined by
+     the typemap) at which the pointer points.
 
+     When the "path" field is negative, the pointer is silly. This is
+     for pointers which cannot be described using the above system,
+     for instance, (struct foo*)((char*)NULL + 47) is such a pointer.
+     In these cases, the path field stores the offset in bytes
+     from the start of the blob to where the pointer points.
+  */
+  usertype_t type;
+  int32_t path;
+
+  int silly;
+
+  /* Sometimes, a programmer does weird shit and the type of the
+     pointer bears no relation to the type stored in memory. In such
+     cases, top_type and path still refer to what's actually in
+     memory, while ctype gives the type the programmer thinks the
+     pointer has. This is 0 in all sensible pointers. 
+     
+     We need to maintain this field in case a programmer casts a
+     pointer to a silly type, offsets that pointer, and then
+     dereferences it. This is the only way we have of knowing which
+     value to return to the user.
+  */
   usertype_t ctype;
 };
 
+/* returns the type of the object pointed to by this pointer.
+   Argument must be a pointer type. */
+usertype_t pointer_type(userptr_t);
+
 /* returns a pointer to the start of a given blob */
 userptr_t pointer_to_blob(struct blob*, usertype_t type);
+
 
 /* index into an array */
 userptr_t pointer_index(userptr_t, int index);

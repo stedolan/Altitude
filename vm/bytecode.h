@@ -1,6 +1,29 @@
+#ifndef _ALTITUDE_BYTECODE_H
+#define _ALTITUDE_BYTECODE_H
 #include <stdint.h>
 #include "atom.h"
 #include "memtypes.h"
+
+
+
+/* location information */
+/* If there is no location information for this sexp, filename is
+ * NULL and line and bytepos are -1.
+ */
+struct location{
+  atom filename;
+  int line, bytepos;
+};
+
+/* printing locations
+   Usage: printf("%s happened here: " LOC_FMT ", %d times.",
+                 whathappened, LOC_ARGS(location), ntimes);
+*/
+
+#define LOC_FMT "@\"%s\":%d:%d"
+#define LOC_ARGS(l) l.filename->string, l.line, l.bytepos
+
+
 
 
 /* Instruction format
@@ -30,24 +53,51 @@
 
 typedef uint16_t instruction;
 
+struct var_decl{
+  atom name;
+  usertype_t type;
+  struct location loc;
+};
+
 struct function{
+  int ID;
   atom name;
 
   usertype_t return_type;
   
   /* Declared arguments to the function */
   int nformals;
-  usertype_t* formal_types;
+  struct var_decl* formals;
 
   /* Local variables */
   int nlocals;
-  usertype_t* local_types;
+  struct var_decl* locals;
 
+  /* All function-scope variables (global & local) 
+     First few are the formals, rest are the locals
+     nvars == nformals + nlocals */
+  int nvars;
+  struct var_decl* vars;
+  
   /* Actual code */
   int codelen;
   instruction* code;
 };
 
+
+struct program{
+  struct typemap* typemap;
+  int nfunctions;
+  struct function* functions;
+  int nglobals;
+  struct var_decl* globals;
+
+  struct function* main_function;
+};
+
+void var_decl_dump(int nvars, struct var_decl*);
+void function_dump(struct function*);
+void program_dump(struct program*);
 
 typedef enum{
   /////// Pure data opcodes (manipulate stack, no side-effects)
@@ -103,7 +153,7 @@ typedef enum{
   FUNC_CALL, FUNC_RETURN,
   //control flow within a function - both take a int16_t immediate
   //jump offset
-  JUMP_ALWAYS, JUMP_IFTRUE,
+  GOTO_ALWAYS, GOTO_COND,
 } opcode;
 
 
@@ -120,3 +170,14 @@ static inline instruction build_instr_typed(opcode a, primtype b){
 static inline instruction build_instr_untyped(opcode a){
   return build_instr_typed(a,0);
 }
+
+static inline int takes_immediate_arg(opcode op){
+  return 
+    op == GOTO_COND ||
+    op == GOTO_ALWAYS || 
+    op == VAR_LOAD_LOCAL ||
+    op == VAR_LOAD_GLOBAL || 
+    op == VAR_LOAD_FUNC ||
+    op == PTR_OFFSET;
+}
+#endif

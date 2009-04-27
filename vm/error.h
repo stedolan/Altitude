@@ -20,7 +20,16 @@ typedef enum{
            //things have happened
   
   E_SEXP, //s-expression parsing
-  
+  E_COMPILE, //s-expression compilation to bytecode
+
+
+  //VM errors, should all be impossible due to compilation process
+  //checking them ahead-of-time
+  E_INSTR, //illegal instruction executed
+  E_STACK, //stack underflow in vm
+  E_STACKTYPE, //bad types on stack in vm
+  E_VARACCESS, //variable access
+
   /* 100-199
      User warnings: Altitude has detected that the user's code did
      something it probably didn't mean to. It is possible that these
