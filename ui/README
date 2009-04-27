@@ -1,1 +1,3 @@
-This directory holds or will hold the code for the Altitude user interface.
+This directory holds the code for the Altitude user interface.
+
+Currently the code is (being) written in C#, for rapid development. It should work natively under Mono on Linux, but we may choose to rewrite the UI in pure C/Glade some time in the future (when we have less of a deadline).

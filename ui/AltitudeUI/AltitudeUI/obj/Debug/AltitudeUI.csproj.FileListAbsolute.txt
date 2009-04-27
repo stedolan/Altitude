@@ -1,0 +1,10 @@
+C:\Documents and Settings\Mark King\My Documents\Visual Studio 2008\Projects\AltitudeUI\AltitudeUI\bin\Debug\AltitudeUI.exe
+C:\Documents and Settings\Mark King\My Documents\Visual Studio 2008\Projects\AltitudeUI\AltitudeUI\bin\Debug\AltitudeUI.pdb
+C:\Documents and Settings\Mark King\My Documents\Visual Studio 2008\Projects\AltitudeUI\AltitudeUI\obj\Debug\ResolveAssemblyReference.cache
+C:\Documents and Settings\Mark King\My Documents\Visual Studio 2008\Projects\AltitudeUI\AltitudeUI\obj\Debug\AltitudeUI.ConsoleForm.resources
+C:\Documents and Settings\Mark King\My Documents\Visual Studio 2008\Projects\AltitudeUI\AltitudeUI\obj\Debug\AltitudeUI.MainForm.resources
+C:\Documents and Settings\Mark King\My Documents\Visual Studio 2008\Projects\AltitudeUI\AltitudeUI\obj\Debug\AltitudeUI.Properties.Resources.resources
+C:\Documents and Settings\Mark King\My Documents\Visual Studio 2008\Projects\AltitudeUI\AltitudeUI\obj\Debug\AltitudeUI.csproj.GenerateResource.Cache
+C:\Documents and Settings\Mark King\My Documents\Visual Studio 2008\Projects\AltitudeUI\AltitudeUI\obj\Debug\AltitudeUI.exe
+C:\Documents and Settings\Mark King\My Documents\Visual Studio 2008\Projects\AltitudeUI\AltitudeUI\obj\Debug\AltitudeUI.pdb
+C:\Documents and Settings\Mark King\My Documents\Visual Studio 2008\Projects\AltitudeUI\AltitudeUI\obj\Debug\AltitudeUI.CodeEditorBox.resources
