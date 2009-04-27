@@ -150,7 +150,7 @@ typedef enum{
 
   /////// Control flow
   //function call/return
-  FUNC_CALL, FUNC_RETURN,
+  FUNC_CALL, FUNC_RETURN, FUNC_RETURN_NONE,
   //control flow within a function - both take a int16_t immediate
   //jump offset
   GOTO_ALWAYS, GOTO_COND,

@@ -6,10 +6,6 @@
 #include "hashtable.h"
 #include "error.h"
 
-inline static int is_sexp_with_tag(struct sexp_element s, sexp_tag t){
-  return s.type == ST_SEXP && s.data.sexp->tag == t;
-}
-
 
 void build_var_decls(int size, struct sexp_element* decllist, int* outsize, struct var_decl** outvars){
   struct var_decl* vars = malloc(size * sizeof(struct var_decl));
@@ -157,7 +153,7 @@ static void compile_function(struct sexp* f, struct function* ret, ht_atom_t fun
   
   //We add a sentinel instruction at the end of the stream
   //so that all instructions end in a "return"
-  ret->code[codepos++] = build_instr_untyped(RETNONE);
+  ret->code[codepos++] = build_instr_untyped(FUNC_RETURN_NONE);
 
   ret->codelen = codepos;
 

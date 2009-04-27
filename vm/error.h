@@ -19,8 +19,10 @@ typedef enum{
   E_ERROR, //internal consistency check, if one of these is printed bad
            //things have happened
   
+  //internal compiler errors - due to a bug in Altitude
   E_SEXP, //s-expression parsing
   E_COMPILE, //s-expression compilation to bytecode
+  E_TYPEMAP, //building typemap
 
 
   //VM errors, should all be impossible due to compilation process

@@ -94,6 +94,12 @@ struct sexp{
   struct sexp_element* elems;
 };
 
+
+inline static int is_sexp_with_tag(struct sexp_element s, sexp_tag t){
+  return s.type == ST_SEXP && s.data.sexp->tag == t;
+}
+
+
 /* Parse a string into a newly-allocated sexp */
 struct sexp* sexp_parse(char*);
 
