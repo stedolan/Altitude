@@ -48,6 +48,7 @@ typedef enum {
   /* functions & code */
   S_FUNCTION, S_FORMALS, S_LOCALS, S_BODY,
 
+  /* instructions */
   S_PLUS_INT, S_PLUS_SHORT, 
   S_MINUS_INT, 
   S_LT_INT,
@@ -55,7 +56,9 @@ typedef enum {
   S_DEREF, S_ASSIGN, S_INDEX, S_OFFSET, 
 
   S_LOAD_L, S_LOAD_F, S_LOAD_G, S_CONSTANT,
-  S_CALL, S_CALLASSIGN, S_RETNONE, S_RETURN, S_BREAK,
+  S_CALL, S_CALLASSIGN, S_RETNONE, S_RETURN, 
+
+  /* control flow */
   S_GOTO, S_CONDGOTO, S_LABEL,
 
 } sexp_tag;

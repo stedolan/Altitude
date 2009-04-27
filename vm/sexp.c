@@ -43,7 +43,6 @@ const char* sexp_names[]={
   [S_CALLASSIGN] = "callassign",
   [S_RETNONE] = "retnone",
   [S_RETURN] = "return",
-  [S_BREAK] = "break",
   [S_GOTO] = "goto", 
   [S_CONDGOTO] = "condgoto",
   [S_LABEL] = "label",
