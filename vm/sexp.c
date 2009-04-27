@@ -28,6 +28,10 @@ const char* sexp_names[]={
   [S_PLUS_INT] = "plus.int",
   [S_PLUS_SHORT] = "plus.short",
   [S_MINUS_INT] = "minus.int", 
+  [S_TIMES_INT] = "times.int",
+  [S_DIV_INT] = "div.int",
+  [S_MOD_INT] = "mod.int",
+  [S_NEGATE_INT] = "negate.int",
   [S_LT_INT] = "lt.int",
 
   [S_DEREF] = "deref",

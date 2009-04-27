@@ -14,10 +14,10 @@ int main(){
   vector_t v = make_vector(10, 5);
 
   for(i = 0; i < 15; i++){
-    vector_push_back(v, strdup("lol"));
+    vector_push_back(v, strdup("test"));
   }
   
-  vector_set(v, 14, strdup("test"));
+  vector_set(v, 14, strdup("testing"));
 
   for(i = 0; i < v->location; i++){
     printf("%d\n", i);
@@ -30,7 +30,7 @@ int main(){
 
   for(i = 0; i < 10; i++){
     deque_push_back(d, strdup("back"));
-    deque_push_front(d, strdup("front"));    
+    deque_push_back(d, strdup("front"));    
   }
 
   while(d->location){

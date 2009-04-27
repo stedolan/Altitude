@@ -92,6 +92,14 @@ static void compile_function(struct sexp* f, struct function* ret, ht_atom_t fun
     case S_PLUS_SHORT: ret->code[codepos++] = build_instr_typed(ARITH_PLUS, PS_SHORT);break;
 
     case S_MINUS_INT:  ret->code[codepos++] = build_instr_typed(ARITH_MINUS, PS_INT);break;
+    
+    case S_TIMES_INT:  ret->code[codepos++] = build_instr_typed(ARITH_TIMES, PS_INT);break;
+    
+    case S_DIV_INT:    ret->code[codepos++] = build_instr_typed(ARITH_DIV, PS_INT);break;
+
+    case S_MOD_INT:    ret->code[codepos++] = build_instr_typed(ARITH_MOD, PS_INT);break;
+    
+    case S_NEGATE_INT: ret->code[codepos++] = build_instr_typed(ARITH_NEGATE, PS_INT);break;
 
     case S_LT_INT:     ret->code[codepos++] = build_instr_typed(REL_LT, PS_INT);break;
 

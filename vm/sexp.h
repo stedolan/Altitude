@@ -53,7 +53,8 @@ typedef enum {
 
   /* instructions */
   S_PLUS_INT, S_PLUS_SHORT, 
-  S_MINUS_INT, 
+  S_MINUS_INT, S_TIMES_INT, S_DIV_INT, S_MOD_INT,
+  S_NEGATE_INT,
   S_LT_INT,
 
   S_DEREF, S_ASSIGN, S_INDEX, S_OFFSET, 

@@ -38,6 +38,16 @@ void run(struct program* prog){
     stack[stacktop-2].type = result;				\
   }while(0)
 
+#define HAS_TYPE(type1, result)			                \
+  do{								\
+    if (stack[stacktop-1].type != type1{			\
+      say(STACKTYPE, "Bad type in stack operation");		\
+      stack[stacktop-1].valid = 0;				\
+    }else{							\
+      stack[stacktop-1].valid =	1;                              \
+    }								\
+    stack[stacktop-1].type = result;				\
+  }while(0)
 
 
 #define REQUIRES_POINTER				\
@@ -54,6 +64,12 @@ void run(struct program* prog){
   stack[stacktop-2] = stack[stacktop-2] op stack[stacktop-1];	\
   stacktop--;							\
   break;
+  
+#define UNOP(type1, op, result)				        \
+  HAS_TYPE(type1, result);				        \
+  stack[stacktop-1] = op stack[stacktop-1];	                \
+  stacktop--;							\
+  break;  
 
   //FIXME: arithmetic error checking (overflow and such)
   while (1){
@@ -61,11 +77,99 @@ void run(struct program* prog){
     case ARITH_PLUS: NEEDS_STACK(2);
       switch (instr_type(*pc)){
       case PS_INT: BINOP(PS_INT,PS_INT,+,PS_INT);
+      case PU_INT:; //FIXME: implement all of these :D
+      case PS_SHORT: BINOP(PS_SHORT,PS_SHORT,+,PS_SHORT);
+      case PU_SHORT:;
+      case PS_CHAR:;
+      case PU_CHAR:;
+      case PS_LONG_LONG:;
+      case PU_LONG_LONG:;
       default:
-	say(INSTR, " proper addition not implemented");
+	say(INSTR, "complete addition not implemented");
 	goto abnormal_quit;
       }
       break;
+      
+    case ARITH_MINUS: NEEDS_STACK(2);
+      switch (instr_type(*pc)){
+      case PS_INT: BINOP(PS_INT,PS_INT,-,PS_INT);
+      case PU_INT:;
+      case PS_SHORT:;
+      case PU_SHORT:;
+      case PS_CHAR:;
+      case PU_CHAR:;
+      case PS_LONG_LONG:;
+      case PU_LONG_LONG:;
+      default:
+	say(INSTR, "complete subtraction not implemented");
+	goto abnormal_quit;
+      }
+      break;
+      
+    case ARITH_TIMES: NEEDS_STACK(2);
+      switch (instr_type(*pc)){
+      case PS_INT: BINOP(PS_INT,PS_INT,*,PS_INT);
+      case PU_INT:;
+      case PS_SHORT:;
+      case PU_SHORT:;
+      case PS_CHAR:;
+      case PU_CHAR:;
+      case PS_LONG_LONG:;
+      case PU_LONG_LONG:;
+      default:
+	say(INSTR, "complete multiplication not implemented");
+	goto abnormal_quit;
+      }
+      break;
+    
+    case ARITH_DIV: NEEDS_STACK(2);
+      switch (instr_type(*pc)){
+      case PS_INT: BINOP(PS_INT,PS_INT,/,PS_INT);
+      case PU_INT:;
+      case PS_SHORT:;
+      case PU_SHORT:;
+      case PS_CHAR:;
+      case PU_CHAR:;
+      case PS_LONG_LONG:;
+      case PU_LONG_LONG:;
+      default:
+	say(INSTR, "complete division not implemented");
+	goto abnormal_quit;
+      }
+      break;
+
+    case ARITH_MOD: NEEDS_STACK(2);
+      switch (instr_type(*pc)){
+      case PS_INT: BINOP(PS_INT,PS_INT,%,PS_INT);
+      case PU_INT:;
+      case PS_SHORT:;
+      case PU_SHORT:;
+      case PS_CHAR:;
+      case PU_CHAR:;
+      case PS_LONG_LONG:;
+      case PU_LONG_LONG:;
+      default:
+	say(INSTR, "complete modulus not implemented");
+	goto abnormal_quit;
+      }
+      break;
+
+    case ARITH_NEGATE: NEEDS_STACK(1);
+      switch (instr_type(*pc)){
+      case PS_INT: UNOP(PS_INT,!,PS_INT);
+      case PU_INT:;
+      case PS_SHORT:;
+      case PU_SHORT:;
+      case PS_CHAR:;
+      case PU_CHAR:;
+      case PS_LONG_LONG:;
+      case PU_LONG_LONG:;
+      default:
+	say(INSTR, "complete negation not implemented");
+	goto abnormal_quit;
+      }
+      break;
+        
     case REL_LT: NEEDS_STACK(2);
       switch (instr_type(*pc)){
       case PS_INT: BINOP(PS_INT,PS_INT,<,PS_INT);
