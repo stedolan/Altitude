@@ -179,6 +179,14 @@ void run(struct program* prog){
       }
       break;
      
+    case REL_GT: NEEDS_STACK(2);
+      switch (instr_type(*pc)){
+      case PS_INT: BINOP(PS_INT,PS_INT,>,PS_INT);
+      default:
+	say(INSTR, "complete GT not implemented");
+	goto abnormal_quit;
+      }
+      break;
 
     case PTR_DEREF: NEEDS_STACK(1); REQUIRES_POINTER;
       stack[stacktop-1] = pointer_deref(stack[stacktop-1]);

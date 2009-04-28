@@ -104,6 +104,8 @@ static void compile_function(struct sexp* f, struct function* ret, ht_atom_t fun
     case S_NEGATE_INT: ret->code[codepos++] = build_instr_typed(ARITH_NEGATE, PS_INT);break;
 
     case S_LT_INT:     ret->code[codepos++] = build_instr_typed(REL_LT, PS_INT);break;
+    
+    case S_GT_INT:     ret->code[codepos++] = build_instr_typed(REL_GT, PS_INT);break;
 
     case S_DEREF:      ret->code[codepos++] = build_instr_untyped(PTR_DEREF);break;
     case S_ASSIGN:     ret->code[codepos++] = build_instr_untyped(PTR_ASSIGN);break;
