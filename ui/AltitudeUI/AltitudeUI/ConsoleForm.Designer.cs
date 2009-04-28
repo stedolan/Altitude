@@ -54,7 +54,6 @@
             this.ShowIcon = false;
             this.ShowInTaskbar = false;
             this.Text = "IO Console";
-            this.TopMost = true;
             this.ResumeLayout(false);
 
         }

@@ -45,14 +45,15 @@
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutAltitudeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.MainToolStrip = new System.Windows.Forms.ToolStrip();
-            this.toolStripButton1 = new System.Windows.Forms.ToolStripButton();
             this.toolStripButton2 = new System.Windows.Forms.ToolStripButton();
+            this.toolStripButton1 = new System.Windows.Forms.ToolStripButton();
             this.toolStripButton3 = new System.Windows.Forms.ToolStripButton();
             this.toolStripButton4 = new System.Windows.Forms.ToolStripButton();
+            this.toolStripButton5 = new System.Windows.Forms.ToolStripButton();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.ToolStripProgressBar = new System.Windows.Forms.ToolStripProgressBar();
             this.ToolStripStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
-            this.toolStripButton5 = new System.Windows.Forms.ToolStripButton();
+            this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.CodeEditorBox = new AltitudeUI.CodeEditorBox();
             this.menuStrip1.SuspendLayout();
             this.MainToolStrip.SuspendLayout();
@@ -98,6 +99,7 @@
             this.cSourceToolStripMenuItem.Name = "cSourceToolStripMenuItem";
             this.cSourceToolStripMenuItem.Size = new System.Drawing.Size(170, 22);
             this.cSourceToolStripMenuItem.Text = "Compile C Source";
+            this.cSourceToolStripMenuItem.Click += new System.EventHandler(this.cSourceToolStripMenuItem_Click);
             // 
             // altitudeBytecodeToolStripMenuItem
             // 
@@ -191,14 +193,6 @@
             this.MainToolStrip.TabIndex = 1;
             this.MainToolStrip.Text = "ToolStrip";
             // 
-            // toolStripButton1
-            // 
-            this.toolStripButton1.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButton1.Image")));
-            this.toolStripButton1.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.toolStripButton1.Name = "toolStripButton1";
-            this.toolStripButton1.Size = new System.Drawing.Size(46, 22);
-            this.toolStripButton1.Text = "Run";
-            // 
             // toolStripButton2
             // 
             this.toolStripButton2.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButton2.Image")));
@@ -206,6 +200,16 @@
             this.toolStripButton2.Name = "toolStripButton2";
             this.toolStripButton2.Size = new System.Drawing.Size(65, 22);
             this.toolStripButton2.Text = "Go Back";
+            this.toolStripButton2.Click += new System.EventHandler(this.toolStripButton2_Click);
+            // 
+            // toolStripButton1
+            // 
+            this.toolStripButton1.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButton1.Image")));
+            this.toolStripButton1.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolStripButton1.Name = "toolStripButton1";
+            this.toolStripButton1.Size = new System.Drawing.Size(46, 22);
+            this.toolStripButton1.Text = "Run";
+            this.toolStripButton1.Click += new System.EventHandler(this.toolStripButton1_Click);
             // 
             // toolStripButton3
             // 
@@ -222,6 +226,16 @@
             this.toolStripButton4.Name = "toolStripButton4";
             this.toolStripButton4.Size = new System.Drawing.Size(120, 22);
             this.toolStripButton4.Text = "Remove Breakpoint";
+            // 
+            // toolStripButton5
+            // 
+            this.toolStripButton5.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
+            this.toolStripButton5.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButton5.Image")));
+            this.toolStripButton5.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolStripButton5.Name = "toolStripButton5";
+            this.toolStripButton5.Size = new System.Drawing.Size(45, 22);
+            this.toolStripButton5.Text = "Exit";
+            this.toolStripButton5.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
             // 
             // statusStrip1
             // 
@@ -246,15 +260,11 @@
             this.ToolStripStatusLabel.Size = new System.Drawing.Size(177, 17);
             this.ToolStripStatusLabel.Text = "Altitude - Debugging Above C Level";
             // 
-            // toolStripButton5
+            // openFileDialog
             // 
-            this.toolStripButton5.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
-            this.toolStripButton5.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButton5.Image")));
-            this.toolStripButton5.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.toolStripButton5.Name = "toolStripButton5";
-            this.toolStripButton5.Size = new System.Drawing.Size(45, 22);
-            this.toolStripButton5.Text = "Exit";
-            this.toolStripButton5.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
+            this.openFileDialog.DefaultExt = "c";
+            this.openFileDialog.Filter = "C Source|*.c|All files|*";
+            this.openFileDialog.Title = "Select C Source File";
             // 
             // CodeEditorBox
             // 
@@ -274,9 +284,11 @@
             this.Controls.Add(this.MainToolStrip);
             this.Controls.Add(this.menuStrip1);
             this.MainMenuStrip = this.menuStrip1;
+            this.MaximizeBox = false;
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "Altitude";
+            this.Move += new System.EventHandler(this.MainForm_Move);
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
             this.MainToolStrip.ResumeLayout(false);
@@ -315,6 +327,7 @@
         private System.Windows.Forms.ToolStripStatusLabel ToolStripStatusLabel;
         private CodeEditorBox CodeEditorBox;
         private System.Windows.Forms.ToolStripButton toolStripButton5;
+        private System.Windows.Forms.OpenFileDialog openFileDialog;
     }
 }
 

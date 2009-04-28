@@ -14,6 +14,17 @@ namespace AltitudeUI
         public CodeEditorBox()
         {
             InitializeComponent();
+            this.RTxtBoxLineNo.Font = this.RTxtBoxCode.Font;
+        }
+
+        public void Write(string text)
+        {
+            this.RTxtBoxCode.Text = text;
+        }
+
+        public string Read() 
+        {
+            return this.RTxtBoxCode.Text;
         }
 
         private void RTxtBoxCode_TextChanged(object sender, EventArgs e)
@@ -23,11 +34,6 @@ namespace AltitudeUI
             {
                 this.RTxtBoxLineNo.Text += (i+1) + "\n";
             }
-        }
-
-        private void dispLineNos()
-        {
-
         }
     }
 }

@@ -35,6 +35,7 @@
             // RTxtBoxCode
             // 
             this.RTxtBoxCode.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.RTxtBoxCode.Font = new System.Drawing.Font("Lucida Console", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.RTxtBoxCode.Location = new System.Drawing.Point(42, 0);
             this.RTxtBoxCode.Name = "RTxtBoxCode";
             this.RTxtBoxCode.Size = new System.Drawing.Size(542, 457);
@@ -47,11 +48,16 @@
             this.RTxtBoxLineNo.BackColor = System.Drawing.Color.LightSteelBlue;
             this.RTxtBoxLineNo.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.RTxtBoxLineNo.Dock = System.Windows.Forms.DockStyle.Left;
+            this.RTxtBoxLineNo.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Underline, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.RTxtBoxLineNo.Location = new System.Drawing.Point(0, 0);
             this.RTxtBoxLineNo.Name = "RTxtBoxLineNo";
+            this.RTxtBoxLineNo.ReadOnly = true;
+            this.RTxtBoxLineNo.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.None;
             this.RTxtBoxLineNo.Size = new System.Drawing.Size(42, 457);
             this.RTxtBoxLineNo.TabIndex = 2;
+            this.RTxtBoxLineNo.TabStop = false;
             this.RTxtBoxLineNo.Text = "";
+            this.RTxtBoxLineNo.WordWrap = false;
             // 
             // CodeEditorBox
             // 

@@ -8,3 +8,4 @@ C:\Documents and Settings\Mark King\My Documents\Visual Studio 2008\Projects\Alt
 C:\Documents and Settings\Mark King\My Documents\Visual Studio 2008\Projects\AltitudeUI\AltitudeUI\obj\Debug\AltitudeUI.exe
 C:\Documents and Settings\Mark King\My Documents\Visual Studio 2008\Projects\AltitudeUI\AltitudeUI\obj\Debug\AltitudeUI.pdb
 C:\Documents and Settings\Mark King\My Documents\Visual Studio 2008\Projects\AltitudeUI\AltitudeUI\obj\Debug\AltitudeUI.CodeEditorBox.resources
+C:\Documents and Settings\Mark King\My Documents\Visual Studio 2008\Projects\AltitudeUI\AltitudeUI\obj\Debug\AltitudeUI.ErrorsForm.resources

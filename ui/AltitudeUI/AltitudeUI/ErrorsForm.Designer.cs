@@ -28,11 +28,35 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
+            this.listBoxErrors = new System.Windows.Forms.ListBox();
+            this.SuspendLayout();
+            // 
+            // listBoxErrors
+            // 
+            this.listBoxErrors.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.listBoxErrors.FormattingEnabled = true;
+            this.listBoxErrors.Location = new System.Drawing.Point(0, 0);
+            this.listBoxErrors.Name = "listBoxErrors";
+            this.listBoxErrors.Size = new System.Drawing.Size(299, 264);
+            this.listBoxErrors.TabIndex = 0;
+            // 
+            // ErrorsForm
+            // 
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Text = "ErrorsForm";
+            this.ClientSize = new System.Drawing.Size(299, 266);
+            this.Controls.Add(this.listBoxErrors);
+            this.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;
+            this.Name = "ErrorsForm";
+            this.ShowInTaskbar = false;
+            this.Text = "Errors / Warnings";
+            this.ResumeLayout(false);
+
         }
 
         #endregion
+
+        private System.Windows.Forms.ListBox listBoxErrors;
     }
 }
