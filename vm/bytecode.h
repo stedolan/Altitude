@@ -4,28 +4,6 @@
 #include "atom.h"
 #include "memtypes.h"
 
-
-
-/* location information */
-/* If there is no location information for this sexp, filename is
- * NULL and line and bytepos are -1.
- */
-struct location{
-  atom filename;
-  int line, bytepos;
-};
-
-/* printing locations
-   Usage: printf("%s happened here: " LOC_FMT ", %d times.",
-                 whathappened, LOC_ARGS(location), ntimes);
-*/
-
-#define LOC_FMT "@\"%s\":%d:%d"
-#define LOC_ARGS(l) l.filename->string, l.line, l.bytepos
-
-
-
-
 /* Instruction format
  *
  * Many instructions require a type. For instance, addition of two
@@ -86,7 +64,6 @@ struct function{
 
 
 struct program{
-  struct typemap* typemap;
   int nfunctions;
   struct function* functions;
   int nglobals;
@@ -100,60 +77,9 @@ void function_dump(struct function*);
 void program_dump(struct program*);
 
 typedef enum{
-  /////// Pure data opcodes (manipulate stack, no side-effects)
-  //arithmetic
-  ARITH_PLUS, ARITH_MINUS, ARITH_TIMES, ARITH_DIV, ARITH_MOD, ARITH_NEGATE,
-
-  //bitwise operators
-  BW_LSHIFT, BW_RSHIFT, BW_AND, BW_OR, BW_XOR, BW_NOT,
-
-  //comparisons, only for arithmetic types (not pointers)
-  REL_EQ, REL_LEQ, REL_GEQ, REL_LT, REL_GT, REL_NE,
-
-  //casts *TO* the specified type
-  CAST_S_CHAR, CAST_U_CHAR, CAST_S_SHORT, CAST_U_SHORT,
-  CAST_S_INT, CAST_U_INT, CAST_S_LONG_LONG, CAST_U_LONG_LONG,
-
-  //logical operators, these all operate only on ints and return ints
-  LOG_AND, LOG_OR, LOG_NOT,
-
-  //no-op, pop something off the stack and ignore it
-  NOOP_POP,
-
-  
-  /////// Pointer manipulation
-  //dereference, store value pointed at on the stack
-  PTR_DEREF,
-  //assign, store value through pointer
-  PTR_ASSIGN,
-  //index into an array (i.e. add an integer to a pointer)
-  PTR_INDEX,
-  //offset into a struct or union (i.e. point to a field)
-  PTR_OFFSET,
-  //memory allocation
-  PTR_MALLOC, PTR_FREE,
-  //arithmetic
-  PTR_DIFF, PTR_TO_LL, PTR_FROM_LL,
-  //pointer->pointer casts. Takes 2 immediates, which make up a usertype_t in big-endian order
-  PTR_CAST,
-
-  /////// Variables
-  //All of these operations take an immediate operand, an offset into
-  //the specified table (local, global, function or constant)
-  //load address of local or global or function onto the stack
-  VAR_LOAD_LOCAL, VAR_LOAD_GLOBAL, VAR_LOAD_FUNC,
-  //load value of local or global onto the stack (above followed by PTR_DEREF)
-  VAR_LOADV_LOCAL, VAR_LOADV_GLOBAL,
-  //load value of a constant (from the literals table). In the case of
-  //literal strings, this is loaded as a pointer.
-  VAR_LOAD_CONSTANT,
-
-  /////// Control flow
-  //function call/return
-  FUNC_CALL, FUNC_RETURN, FUNC_RETURN_NONE,
-  //control flow within a function - both take a int16_t immediate
-  //jump offset
-  GOTO_ALWAYS, GOTO_COND,
+#define op(name, imm, in, out) name,
+#include "opcodes.h"
+#undef op
 } opcode;
 
 
@@ -170,14 +96,6 @@ static inline instruction build_instr_typed(opcode a, primtype b){
 static inline instruction build_instr_untyped(opcode a){
   return build_instr_typed(a,0);
 }
+int count_immediates(opcode);
 
-static inline int takes_immediate_arg(opcode op){
-  return 
-    op == GOTO_COND ||
-    op == GOTO_ALWAYS || 
-    op == VAR_LOAD_LOCAL ||
-    op == VAR_LOAD_GLOBAL || 
-    op == VAR_LOAD_FUNC ||
-    op == PTR_OFFSET;
-}
 #endif

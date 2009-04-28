@@ -1,4 +1,6 @@
 #include <stdlib.h>
+#include <string.h>
+#include <assert.h>
 #include "memtypes.h"
 #include "bytecode.h"
 #include "error.h"
@@ -22,7 +24,7 @@ void build_var_decls(int size, struct sexp_element* decllist, int* outsize, stru
     }
     vars[i].name = var->elems[1].data.string;
     vars[i].loc = var->location;
-    vars[i].type = build_type(var->elems[0].data.sexp);
+    vars[i].type = type_from_sexp(var->elems[0].data.sexp);
   }
   *outvars = vars;
   *outsize = size;
@@ -47,8 +49,8 @@ static void* new_int(int x){
 }
 
 static void compile_function(struct sexp* f, struct function* ret, ht_atom_t funcnames){
-  if (!(f->elems[0].type == ST_STRING &&
-	f->nelems == 3 && 
+  if (!(f->nelems == 4 && 
+        f->elems[0].type == ST_STRING &&
 	is_sexp_with_tag(f->elems[1], S_FORMALS) &&
 	is_sexp_with_tag(f->elems[2], S_LOCALS) &&
 	is_sexp_with_tag(f->elems[3], S_BODY))){
@@ -63,13 +65,13 @@ static void compile_function(struct sexp* f, struct function* ret, ht_atom_t fun
 		  &ret->nlocals, &ret->locals);
   
   ret->nvars = ret->nformals + ret->nlocals;
-  ret->vars = malloc(sizeof(struct var_decl*) * ret->nvars);
+  ret->vars = malloc(sizeof(struct var_decl) * ret->nvars);
 
 
   memcpy(ret->vars,
-	 ret->locals, sizeof(struct var_decl*) * ret->nlocals);
-  memcpy(ret->vars + ret->nlocals,
-	 ret->formals, sizeof(struct var_decl*) * ret->nformals);
+	 ret->formals, sizeof(struct var_decl) * ret->nformals);
+  memcpy(ret->vars + ret->nformals,
+	 ret->locals, sizeof(struct var_decl) * ret->nlocals);
   
   ret->codelen = 20;
   int codepos = 0;
@@ -108,11 +110,13 @@ static void compile_function(struct sexp* f, struct function* ret, ht_atom_t fun
     case S_INDEX:      ret->code[codepos++] = build_instr_untyped(PTR_INDEX);break;
     case S_OFFSET:
       ret->code[codepos++] = build_instr_untyped(PTR_OFFSET);
-      ret->code[codepos++] = get_type_offset(instr->elems[0].data.string,
-					     instr->elems[1].data.string);
+      assert(instr->elems[0].type == ST_STRING &&
+             instr->elems[1].type == ST_STRING);
+      ret->code[codepos++] = 
+        (instruction)get_type_offset(instr->elems[0].data.string,
+                                     instr->elems[1].data.string);
       break;
     
-    case S_CALL:       ret->code[codepos++] = build_instr_untyped(FUNC_CALL);break;
 
 
     //more interesting ones
@@ -142,13 +146,23 @@ static void compile_function(struct sexp* f, struct function* ret, ht_atom_t fun
     case S_GOTO:
       ret->code[codepos++] = build_instr_untyped(GOTO_ALWAYS);
       ret->code[codepos++] = (instruction)curr_label;
-      labelrefs[curr_label++] = instr->elems[0].data.string;
+      labelrefs[curr_label++] = instr->elems[0].data.sexp->elems[0].data.string;
       break;
     case S_CONDGOTO:
       ret->code[codepos++] = build_instr_untyped(GOTO_COND);
       ret->code[codepos++] = (instruction)curr_label;
-      labelrefs[curr_label++] = instr->elems[0].data.string;
+      labelrefs[curr_label++] = instr->elems[0].data.sexp->elems[0].data.string;
       break;
+
+    case S_RETURN:
+      ret->code[codepos++] = build_instr_untyped(FUNC_RETURN);break;
+    case S_RETNONE:
+      ret->code[codepos++] = build_instr_untyped(FUNC_RETURN_NONE);break;
+    case S_CALL:
+      ret->code[codepos++] = build_instr_untyped(FUNC_CALL_NONE);break;
+    case S_CALLASSIGN:
+      ret->code[codepos++] = build_instr_untyped(FUNC_CALL);break;
+
     default:
       sayf(COMPILE, "Invalid sexp in function - %s", sexp_tag_to_string(instr->tag));
       break;
@@ -169,11 +183,13 @@ static void compile_function(struct sexp* f, struct function* ret, ht_atom_t fun
   for (int i=0;i<ret->codelen;i++){
     opcode op = instr_opcode(ret->code[i]);
     if (op == GOTO_COND || op == GOTO_ALWAYS){
-      ret->code[i] = *(int*)ht_atom_get(labelpos, labelrefs[ret->code[i+1]]);
+      int* lbl = ht_atom_get(labelpos, labelrefs[(int)ret->code[i+1]]);
+      if (!lbl)
+        sayf(COMPILE, "couldn't find %s", labelrefs[(int)ret->code[i+1]]->string);
+      else
+        ret->code[i+1] = (instruction)*lbl;
     }
-    if (takes_immediate_arg(op)){
-      i++; //skip the immediate operand
-    }
+    i += count_immediates(op);
   }
   //free temporaries
   for (ht_atom_iter i = ht_atom_begin(labelpos); ht_atom_hasmore(i); i=ht_atom_next(i))
@@ -221,7 +237,7 @@ struct program* compile(struct sexp* code){
     }
   }
   
-  program->typemap = build_typemap(ntypes, types);
+  build_typemap(ntypes, types);
   free(types);
 
 
@@ -234,7 +250,7 @@ struct program* compile(struct sexp* code){
   ht_atom_t funcnames = ht_atom_alloc();
   for (int i=0;i<nfunctions;i++){
     program->functions[i].ID = i;
-    ht_atom_set(funcnames, functions[i].elems[0].data.string, &program->functions[i]);
+    ht_atom_set(funcnames, functions[i]->elems[0].data.string, &program->functions[i]);
   }
   program->main_function = ht_atom_get(funcnames, atom_get("main"));
   
@@ -246,6 +262,16 @@ struct program* compile(struct sexp* code){
   
   return program;
 }
+
+int count_immediates(opcode x){
+  static const int imm_count[] = {
+#define op(name, imm, in, out) [name] = imm,
+#include "opcodes.h"
+#undef op
+  };
+  return imm_count[x];
+}
+
 
 
 void var_decl_dump(int nvars, struct var_decl* d){
@@ -261,6 +287,23 @@ void var_decl_dump(int nvars, struct var_decl* d){
 
 
 void function_dump(struct function* f){
+  static const char* opcode_names[] = {
+#define op(name, imm, in, out) [name] = #name,
+#include "opcodes.h"
+#undef op
+  };
+  static const char* typespecs[] = {
+    [PT_VOID] = "",
+    [PS_CHAR] = ".char",
+    [PU_CHAR] = ".uchar",
+    [PS_SHORT] = ".short",
+    [PU_SHORT] = ".ushort",
+    [PS_INT] = ".int",
+    [PU_INT] = ".uint",
+    [PS_LONG_LONG] = ".longlong",
+    [PU_LONG_LONG] = ".ulonglong",
+    [PT_PTR] = "<ptr>",
+  };
   printf("Function <%s>:\n", f->name->string);
   printf(" Arguments:\n");
   var_decl_dump(f->nformals, f->formals);
@@ -269,16 +312,15 @@ void function_dump(struct function* f){
   printf(" Code:\n");
   for (int i=0;i<f->codelen;i++){
     printf("  %04d: ", i);
-    switch (instr_opcode(f->code[i])){
-    case GOTO_ALWAYS:printf("GOTO_ALWAYS");break;
-    case GOTO_COND:printf("GOTO_COND");break;
-    default:
-      printf("%04x",f->code[i]);
+    printf("%s%s",
+           opcode_names[instr_opcode(f->code[i])],
+           typespecs[instr_type(f->code[i])]);
+    for (int j=0;
+         j<count_immediates(instr_opcode(f->code[i]));
+         j++){
+      printf(" %d", f->code[i+1+j]);
     }
-    if (takes_immediate_arg(f->code[i])){
-      printf(" %d", f->code[i+1]);
-      i++;
-    }
+    i+=count_immediates(instr_opcode(f->code[i]));
     printf("\n");
   }
 }

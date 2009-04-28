@@ -1,6 +1,28 @@
 #ifndef _ALTITUDE_ERROR_H
 #define _ALTITUDE_ERROR_H
 #include <stdio.h>
+#include "atom.h"
+
+
+
+
+/* location information */
+/* If there is no location information for this sexp, filename is
+ * NULL and line and bytepos are -1.
+ */
+struct location{
+  atom filename;
+  int line, bytepos;
+};
+
+/* printing locations
+   Usage: printf("%s happened here: " LOC_FMT ", %d times.",
+                 whathappened, LOC_ARGS(location), ntimes);
+*/
+
+#define LOC_FMT "@\"%s\":%d:%d"
+#define LOC_ARGS(l) l.filename->string, l.line, l.bytepos
+
 
 
 /* There are a number of categories of diagnostic.

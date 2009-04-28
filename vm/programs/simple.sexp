@@ -7,14 +7,15 @@
 (@"testorig.c":13:185 function
 "sum"
 (formals (@"testorig.c":13:185 var (type (int)) "x"))
-(locals (@"testorig.c":13:185 var (type (int)) "x"))
+(locals (@"testorig.c":13:185 var (type (comptype "struct somestruct")) "s") (@"testorig.c":13:185
+        var (type (int)) "i"))
 (body (load_l "s")
       (offset "struct somestruct" "obj")
       (offset "struct astruct" "thisval")
-      (constant 0)
+      (constant.int 0)
       (@"testorig.c":15:226 assign)
       (load_l "i")
-      (constant 0)
+      (constant.int 0)
       (@"testorig.c":16:252 assign)
       (label "$LOOPSTART$ALT$0")
       (load_l "i")
@@ -42,7 +43,7 @@
       (load_l "i")
       (load_l "i")
       (deref)
-      (constant 1)
+      (constant.int 1)
       (plus.int)
       (@"testorig.c":16:252 assign)
       (goto (label "$LOOPSTART$ALT$0"))
@@ -55,9 +56,9 @@
 (@"testorig.c":22:325 function
 "main"
 (formals)
-(locals)
+(locals (@"testorig.c":22:325 var (type (int)) "tmp"))
 (body (load_l "tmp")
-      (constant 40)
+      (constant.int 40)
       (load_f "sum")
       (deref)
       (@"testorig.c":23:339 callassign 1)

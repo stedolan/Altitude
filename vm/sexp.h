@@ -38,14 +38,15 @@
 #include "atom.h"
 
 /* for location information structures */
-#include "bytecode.h"
+#include "error.h"
 
 /* The possible tags */
 /* FIXME: very incomplete */
 typedef enum {
   /* types & declarations */
-  S_PROGRAM, S_STRUCT, S_UNION, S_TYPE, S_FIELDS, S_FIELD, S_COMPTYPE,
-  S_INT, S_VAR,
+  S_PROGRAM, S_STRUCT, S_UNION, S_VAR,  S_FIELDS, S_FIELD, 
+  /* referring to (not declaring) types */
+  S_INT, S_TYPE, S_PTR, S_ARRAY, S_TYPEREF, S_ARRAYLEN, S_COMPTYPE,
 
 
   /* functions & code */

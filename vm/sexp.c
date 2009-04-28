@@ -11,12 +11,18 @@ const char* sexp_names[]={
   [S_PROGRAM] = "program",
   [S_STRUCT] = "struct",
   [S_UNION] = "union",
-  [S_TYPE] = "type",
+  [S_VAR] = "var",
   [S_FIELDS] = "fields",
   [S_FIELD] = "field",
-  [S_COMPTYPE] = "comptype",
+
+
   [S_INT] = "int",
-  [S_VAR] = "var",
+  [S_TYPE] = "type",
+  [S_PTR] = "ptr",
+  [S_ARRAY] = "array",
+  [S_TYPEREF] = "typeref",
+  [S_ARRAYLEN] = "arraylen",
+  [S_COMPTYPE] = "comptype",
 
 
 
