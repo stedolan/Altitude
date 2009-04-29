@@ -1,0 +1,23 @@
+(program 
+
+(@"mem.c":4:35 function "main"
+                        (formals)
+                        (locals (@"mem.c":4:35 var (type (ptr (type (void)))) "p2")
+                                (@"mem.c":4:35 var (type (ptr (type (void)))) "p3"))
+                        (body (constant.int 2)
+                              (load_f "__altitude_malloc")
+                              (deref)
+                              (@"mem.c":6:71 callnone 1)
+                              (load_l "p2")
+                              (constant.int 5)
+                              (load_f "__altitude_malloc")
+                              (deref)
+                              (@"mem.c":7:95 callassign 1)
+                              (load_l "p3")
+                              (constant.int -1)
+                              (load_f "__altitude_malloc")
+                              (deref)
+                              (@"mem.c":8:124 callassign 1)
+                              (constant.int 0)
+                              (@"mem.c":9:154 return)))
+)
