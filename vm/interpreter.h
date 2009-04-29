@@ -11,7 +11,7 @@
 
 struct vm_state{
   /* the non-changing parts: function definitions, types, etc. */
-  struct program* prog;
+  struct program* program;
   
   /* The current stack frame */
   struct stackframe* frame;

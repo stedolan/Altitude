@@ -77,6 +77,10 @@ static void compile_function(struct sexp* f, struct function* ret, ht_atom_t fun
   int codepos = 0;
   ret->code = malloc(sizeof(instruction) * ret->codelen);
 
+  ret->nconsts = 20;
+  int constpos = 0;
+  ret->consts = malloc(sizeof(primitive_val) * ret->nconsts);
+  
   int ninstructions = f->elems[3].data.sexp->nelems;
 
   /* maps labels to their position in the code */
@@ -134,7 +138,13 @@ static void compile_function(struct sexp* f, struct function* ret, ht_atom_t fun
     case S_LOAD_G:
       //FIXME
       break;
-    case S_CONSTANT_INT://FIXME: types
+    case S_CONSTANT_INT:
+      ret->consts[constpos].type = PS_INT;
+      ret->consts[constpos].valid = 1;
+      USERDATA_PART(ret->consts[constpos].value,PS_INT) = instr->elems[0].data.integer;
+      ret->code[codepos++] = build_instr_untyped(VAR_LOAD_CONSTANT);
+      ret->code[codepos++] = (instruction)constpos;
+      constpos++;
       break;
 
 
@@ -173,6 +183,8 @@ static void compile_function(struct sexp* f, struct function* ret, ht_atom_t fun
 
     if (ret->codelen - codepos < 10)
       ret->code = realloc(ret->code, sizeof(instruction) * (ret->codelen *= 2));
+    if (ret->nconsts - constpos < 10)
+      ret->constpos = realloc(ret->consts, sizeof(primitive_val) * (ret->nconsts *= 2));
   }
   
   //We add a sentinel instruction at the end of the stream
@@ -180,6 +192,7 @@ static void compile_function(struct sexp* f, struct function* ret, ht_atom_t fun
   ret->code[codepos++] = build_instr_untyped(FUNC_RETURN_NONE);
 
   ret->codelen = codepos;
+  ret->nconsts = constpos;
 
   //Now, we make a second pass to fix up the labels
   for (int i=0;i<ret->codelen;i++){
@@ -189,7 +202,7 @@ static void compile_function(struct sexp* f, struct function* ret, ht_atom_t fun
       if (!lbl)
         sayf(COMPILE, "couldn't find %s", labelrefs[(int)ret->code[i+1]]->string);
       else
-        ret->code[i+1] = (instruction)*lbl;
+        ret->code[i+1] = (instruction)*lbl - i;
     }
     i += count_immediates(op);
   }
@@ -294,33 +307,29 @@ void function_dump(struct function* f){
 #include "opcodes.h"
 #undef op
   };
-  static const char* typespecs[] = {
-    [PT_VOID] = "",
-    [PS_CHAR] = ".char",
-    [PU_CHAR] = ".uchar",
-    [PS_SHORT] = ".short",
-    [PU_SHORT] = ".ushort",
-    [PS_INT] = ".int",
-    [PU_INT] = ".uint",
-    [PS_LONG_LONG] = ".longlong",
-    [PU_LONG_LONG] = ".ulonglong",
-    [PT_PTR] = "<ptr>",
-  };
   printf("Function <%s>:\n", f->name->string);
   printf(" Arguments:\n");
   var_decl_dump(f->nformals, f->formals);
   printf(" Local variables:\n");
   var_decl_dump(f->nlocals, f->locals);
+  printf(" Constants:\n");
+  for (int i=0;i<f->nconsts;i++){
+    printf("  %d%s: %d", i, PRIM_ALT_NAME(f->consts[i].type));
+    //FIXME: rest of primitive types go here
+    printf(" %d\n", (int)USERDATA_PART(f->consts[i],PS_INT));
+  }
   printf(" Code:\n");
   for (int i=0;i<f->codelen;i++){
+    opcode op = instr_opcode(f->code[i]);
     printf("  %04d: ", i);
     printf("%s%s",
-           opcode_names[instr_opcode(f->code[i])],
-           typespecs[instr_type(f->code[i])]);
-    for (int j=0;
-         j<count_immediates(instr_opcode(f->code[i]));
-         j++){
-      printf(" %d", f->code[i+1+j]);
+           opcode_names[op],
+           PRIM_ALT_NAME(instr_type(f->code[i])));
+    for (int j=0;j<count_immediates(op);j++){
+      printf(" %d", (int)f->code[i+1+j]);
+    }
+    if (op == GOTO_ALWAYS || op == GOTO_COND){
+      printf(" (->%d)", i + (int)f->code[i+1]);
     }
     i+=count_immediates(instr_opcode(f->code[i]));
     printf("\n");

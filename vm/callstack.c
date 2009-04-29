@@ -13,10 +13,10 @@ void stackframe_new(struct stackframe* caller, struct function* callee){
   frame->locals = malloc(sizeof(struct blob*) * (callee->nformals + callee->nlocals));
   int local_idx = 0;
   for (int i=0;i<callee->nformals;i++){
-    frame->locals[local_idx++] = blob_alloc(user_sizeof(callee->formal_types[i]));
+    frame->locals[local_idx++] = blob_alloc(user_sizeof(callee->formal_types[i]), callee->formal_types[i]);
   }
   for (int i=0;i<callee->nlocals;i++){
-    frame->locals[local_idx++] = blob_alloc(user_sizeof(callee->local_types[i]));
+    frame->locals[local_idx++] = blob_alloc(user_sizeof(callee->local_types[i]), callee->local_types[i]);
   }
 
   frame->invoked = malloc(sizeof(struct stackframe*) * DEFAULT_INVOKED_SIZE);

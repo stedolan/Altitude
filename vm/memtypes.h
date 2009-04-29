@@ -25,54 +25,62 @@
 #define N_PRIMITIVE_DATA_TYPES 9
 
 typedef enum{
-  PT_VOID = 0, /* Uninitialised memory has type void */
-
-  PS_CHAR=1, /* plain "char" in Altitude is signed char */
-  PU_CHAR,
-  PS_SHORT,
-  PU_SHORT,
-  //int and long are equivalent (both 32 bits)
-  PS_INT,
-  PU_INT,
-  //long long is 64 bits
-  PS_LONG_LONG,
-  PU_LONG_LONG,
-
-
-
-  PT_PTR = 100 /* must come last; it's a bit of a special case */
+#define prim(name,reptype,id,cname) name = id,
+#include "primitives.h"
+#undef prim
 } primtype;
-
-
 
 /* A pointer in userspace. Not represented as a pointer in Altitude,
    but as a 64-bit key in Altitude's internal pointer-table */
 typedef uint64_t userptr_t;
 
-
-
-#define USERDATA_CHAR_LEN sizeof(uint64_t)
-#define USERDATA_SHORT_LEN (sizeof(uint64_t) / sizeof(uint16_t))
-#define USERDATA_INT_LEN (sizeof(uint64_t) / sizeof(uint32_t))
-#define USERDATA_LL_LEN 1
-#define USERDATA_PTR_LEN 1
-
-
 typedef union {
-  int8_t s_char[USERDATA_CHAR_LEN];
-  uint8_t u_char[USERDATA_CHAR_LEN];
-  int16_t s_short[USERDATA_SHORT_LEN];
-  uint16_t u_short[USERDATA_SHORT_LEN];
-  int32_t s_int[USERDATA_INT_LEN];
-  uint32_t u_int[USERDATA_INT_LEN];
-  int64_t s_long_long[USERDATA_LL_LEN];
-  uint64_t u_long_long[USERDATA_LL_LEN];
-  
-  userptr_t ptr[USERDATA_PTR_LEN];
+#define prim(name, reptype, id, cname) \
+  reptype __prim_##name[sizeof(reptype)/sizeof(uint64_t)];
+#include "primitives.h"
+#undef prim
 } userdata;
 
-#define USER_SIZEOF_PTR (USERDATA_CHAR_LEN / USERDATA_PTR_LEN)
+//To get or set a userdata, use USERDATA_PART
+//e.g. printf("%d\n", USERDATA_PART(userdata, PS_INT));
+//     USERDATA_PART(userdata,PS_INT) = 5;
+#define USERDATA_PART(ud, p) ud.__prim_##p[0]
 
+
+#define prim(name, reptype, id, cname) \
+  typedef reptype __reptype_##name;
+#include "primitives.h"
+#undef prim
+
+//Representation types for a user primitive
+//e.g. REPTYPE(PS_INT) x = USERDATA_PART(u1, PS_INT);
+//     USERDATA_PART(u2,PS_INT) = x;
+#define REPTYPE(p) __reptype_##p
+
+static const char* __cnames[] = {
+#define prim(name, reptype, id, cname) [name] = #cname,
+#include "primitives.h"
+#undef prim
+};
+static const char* __pnames[] = {
+#define prim(name, reptype, id, cname) [name] = #name,
+#include "primitives.h"
+#undef prim
+};
+static const char* __usersz_##name = {
+#define prim(name, reptype, id, cname) [name] = \
+  sizeof(reptype)/sizeof(REPTYPE(PS_CHAR)),
+#include "primitives.h"
+#undef prim
+};
+
+//The name of a primitive type (as a string)
+//in either C (e.g. "signed int") or Altitude
+//(e.g. "PS_INT")
+#define PRIM_C_NAME(p) __cname[p]
+#define PRIM_ALT_NAME(p) __pname[p]
+//The size of a primitive type, as visible to a user
+#define PRIM_USERSIZE(p) __usersz[p]
 
 /* A userdata, tagged with information about what it 
    contains */
@@ -138,10 +146,15 @@ struct blob{
      value */
   bitset_t undef_map;
 
+  /* Pointer to the start of the blob */
+  /* Has type "void*" for heap allocs */
+  userptr_t pointer;
+  
+
   uint32_t flags;
 };
 
-struct blob* blob_alloc(usersize_t length);
+struct blob* blob_alloc(usersize_t length, usertype_t type);
 
 
 
@@ -154,6 +167,8 @@ usertype_t pointer_type(userptr_t);
 /* returns a pointer to the start of a given blob */
 userptr_t pointer_to_blob(struct blob*, usertype_t type);
 
+/* returns a pointer to the function given by fidx */
+userptr_t pointer_to_function(int fidx);
 
 /* index into an array */
 userptr_t pointer_index(userptr_t, int index);

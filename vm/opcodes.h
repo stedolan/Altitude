@@ -111,7 +111,7 @@ op(FUNC_RETURN,  0,1,-1)
 op(FUNC_RETURN_NONE,0,1,-1)
 
 //control flow within a function - both take a int16_t immediate
-//jump offset
+//jump offset (offset from the start of the goto instruction)
 op(GOTO_ALWAYS,  1,0,0)
 op(GOTO_COND,    1,0,0)
 

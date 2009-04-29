@@ -50,7 +50,11 @@ struct function{
   /* Local variables */
   int nlocals;
   struct var_decl* locals;
-
+  
+  /* Constants used in the function */
+  int nconsts;
+  struct primitive_val* consts;
+  
   /* All function-scope variables (global & local) 
      First few are the formals, rest are the locals
      nvars == nformals + nlocals */

@@ -1,14 +1,17 @@
 #include "interpreter.h"
 
 
-void run(struct program* prog){
+int32_t run(struct program* prog){
   struct vm_state vm;
   vm.program = prog;
-  vm.stackframe = stackframe_new(NULL, prog->main_function);
+  vm.frame = stackframe_new(NULL, prog->main_function);
+  struct blob* mainret = blob_alloc(user_sizeof(PS_INT), PS_INT);
+  vm.frame->wants_return = 1;
+  vm.frame->return_ptr = pointer_to_blob(mainret, PS_INT);
   vm.now = 0;
 
   /* program counter */
-  instruction* pc = vm.stackframe->func->code;
+  instruction* pc = vm.frame->func->code;
 
   primitive_val stack[1000];
   /* the position of the next stack element to be added, or 
@@ -214,14 +217,14 @@ void run(struct program* prog){
       {
 	pc++;
 	int varidx = (int)*pc;
-	if (varidx < 0 || varidx >= vm.stackframe->func->nvars){
+	if (varidx < 0 || varidx >= vm.frame->func->nvars){
 	  sayf(VARACCESS, "local %d is out-of-bounds of function %s",
-	       varidx, func->name->string);
+	       varidx, vm.frame->func->name->string);
 	  goto abnormal_quit;
 	}
 	stack[stacktop].ptr = 
-	  pointer_to_blob(vm.stackframe.locals[varidx],
-			  vm.stackframe.func->vars[varidx].type);
+	  pointer_to_blob(vm.frame.locals[varidx],
+			  vm.frame.func->vars[varidx].type);
 	stack[stacktop].valid = 1;
 	stack[stacktop].type = PT_PTR;
 	stacktop++;
@@ -236,17 +239,141 @@ void run(struct program* prog){
 	       fidx);
 	  goto abnormal_quit;
 	}
-	stack[stacktop].ptr = vm.stackframe;//FIXME!!!
+	stack[stacktop].ptr = pointer_to_function(fidx);
 	stack[stacktop].type = PT_PTR;
+        stack[stacktop].valid = 1;
 	stacktop++;
       }
       break;
-    case FUNC_CALL:
-      //FIXME!!!
+    case VAR_LOAD_CONSTANT:
+      {
+        pc++;
+        int cidx = (int)*pc;
+        if (varidx < 0 || varidx >= vm.frame->func->nconsts){
+          sayf(VARACCESS, "const %d is out-of-bounds of function %s",
+               cidx, vm.frame->func->name->string);
+          goto abnormal_quit;
+        }
+        stack[stacktop++] = vm.frame->func->consts[cidx];
+      }
       break;
-    case FUNC_RETURN:
-      //FIXME!!!
+    case FUNC_CALL:
+      {
+        pc++;
+        int nargs = (int)*pc;
+        NEEDS_STACK(nargs + 2);//nargs args, 1 function, 1 retval-ptr
+        //FIXME: moar typechecking
+        struct function* func = vm.program->
+          functions[pointer_deref_function(stack[stacktop-2].ptr)];
+        vm.frame = stackframe_new(vm.frame, func);
+        vm.frame->wants_return = 1;
+        vm.frame->return_ptr = stack[stacktop-1].value.ptr
+        vm.frame->return_addr = pc;
+        stacktop -= 2;
+        //copy in args
+        if (nargs != vm.frame->func->nformals){
+          say(INSTR, "wrong number of arguments passed to function");
+          goto abnormal_quit;
+        }
+        if (stacktop != nargs){
+          say(STACK, "stack not empty after function call");
+          goto abnormal_quit;
+        }
+
+        for (int i=0;i<nargs;i++){
+          pointer_assign(pointer_to_blob(vm.frame->locals[nargs-i],
+                                         vm.frame->func->formals[nargs-i]->type),
+                         stack[--stacktop]);
+        }
+
+        pc = vm.frame->func->code;
+      }
+      break;
+    case FUNC_CALL_NONE:
+      {
+        pc++;
+        int nargs = (int)*pc;
+        NEED_STACK(nargs + 1);
+        //FIXME: types
+        struct function* func = vm.program->
+          functions[pointer_deref_function(stack[stacktop-1].ptr)];
+        vm.frame = stackframe_new(vm.frame,func);
+        vm.frame->wants_return = 0;
+        vm.frame->return_addr = pc;
+        //copy in args
+        if (nargs != vm.frame->func->nformals){
+          say(INSTR, "wrong number of arguments passed to function");
+          goto abnormal_quit;
+        }
+        if (stacktop != nargs){
+          say(STACK, "stack not empty after function call");
+          goto abnormal_quit;
+        }
+
+        for (int i=0;i<nargs;i++){
+          pointer_assign(pointer_to_blob(vm.frame->locals[nargs-i],
+                                         vm.frame->func->formals[nargs-i]->type),
+                         stack[--stacktop]);
+        }
+
+        pc = vm.frame->func->code;
+      }
+      break;
+    case FUNC_RETURN: NEED_STACK(1);
+      {
+        if (vm.frame->wants_return){
+          pointer_assign(vm.frame->return_ptr, stack[stacktop-1]);
+          stacktop--;
+        }
+        if (stacktop != 0){
+          say(STACK, "stack not empty upon return");
+          goto abnormal_quit;
+        }
+        pc = vm.frame->return_addr;
+        vm.frame = vm.frame->parent;
+        if (!vm.frame)goto normal_quit; //main returned
+      }
+      break;
+    case FUNC_RETURN_NONE:
+      {
+        if (vm.frame->wants_return){
+          say(INSTR, "function failed to return a value");
+          goto abnormal_quit;
+        }
+        if (stacktop != 0){
+          say(STACK, "stack not empty upon return");
+          goto abnormal_quit;
+        }
+        pc = vm.frame->return_addr;
+        vm.frame = vm.frame->parent;
+        if (!vm.frame)goto normal_quit;
+      }
+      break;
+    case GOTO_COND:NEED_STACK(1);
+      if (!stack[--stacktop]){
+        break;
+      }
+      //otherwise, fall through to GOTO_ALWAYS logic
+    case GOTO_ALWAYS:
+      {
+        int offset = (int)*(pc+1);
+        pc += offset;
+        pc--; //to counter pc++ below.
+      }
       break;
     }
+    pc++;
   }
+
+ normal_quit:
+  say(DEBUG, "program ended");
+  primitive_val retval = pointer_deref(pointer_to_blob(mainret, PS_INT));
+  if (!retval.valid){
+    say(INSTR, "main returned invalid value");
+  }
+  return USERDATA_PART(retval.value, PS_INT)
+
+ abnormal_quit:
+  say(INSTR, "abnormal quit");
+  return -1;
 }
