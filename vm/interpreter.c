@@ -116,6 +116,8 @@ REPTYPE(PS_INT) run(struct program* prog){
   stacktop--;							\
   break;  
 
+
+  say(PROGRAM_START, "Program starting");
   //FIXME: arithmetic error checking (overflow and such)
   while (1){
     switch(instr_opcode(*vm.pc)){
@@ -407,7 +409,7 @@ REPTYPE(PS_INT) run(struct program* prog){
   }
 
  normal_quit:
-  say(DEBUG, "program ended");
+  sayf(PROGRAM_END_OK, "Program ended after %llu instructions executed", vm.now);
   primitive_val retval;
   TRY(pointer_deref(&retval, pointer_to_blob(mainret, PS_INT)));
   if (!retval.valid){
@@ -416,6 +418,6 @@ REPTYPE(PS_INT) run(struct program* prog){
   return USERDATA_PART(retval.value, PS_INT);
 
  abnormal_quit:
-  say(INSTR, "abnormal quit");
+  sayf(PROGRAM_END_CRASH, "Program exited abnormally after %llu instructions executed", vm.now);
   return -1;
 }

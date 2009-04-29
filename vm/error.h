@@ -103,6 +103,9 @@ typedef enum{
   E_UI_MESSAGE = 300,
   E_BADCOMMAND,
   E_BREAKPOINT_HIT,
+  E_PROGRAM_START,
+  E_PROGRAM_END_OK,
+  E_PROGRAM_END_CRASH,
   
   
 } message_category;
