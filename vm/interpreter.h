@@ -22,4 +22,6 @@ struct vm_state{
 
 void run(struct program* prog);
 
+struct location current_location();//for debugging purposes
+
 #endif

@@ -68,6 +68,13 @@ typedef enum{
      implementation, or provably corrupts data) */
   E_GENERIC_USERERR = 200,
   E_NULL_DEREF, //dereference a null pointer
+
+  /* 300-399
+     UI related "errors" - events to notify the UI about which aren't exactly
+     faults, such as hitting a breakpoint (many more could be added here) */
+  E_UI_MESSAGE = 300,
+  E_BADCOMMAND,
+  E_BREAKPOINT_HIT,
   
   
 } message_category;
