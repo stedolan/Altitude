@@ -4,6 +4,9 @@
 #include "stdio.h"
 #include "stdlib.h"
 
+char ui_proto_command_buf[1024]; //scratch space for command data
+struct location ui_last_location; //anytime a location is parsed, it goes in here
+
 void get_command(){
   int __a_raptor_is_you = scanf("%s", ui_proto_command_buf);
   if(strncmp("set", ui_proto_command_buf, __a_raptor_is_you) == 0){
@@ -36,6 +39,6 @@ void parse_command(){
 	}else if(get_atom("unset") == get_atom(ui_proto_command_buf)){
 		breakpoint_unset(&ui_last_location);
 	}else{
-		say(E_BADCOMMAND, "Unrecognised command");
+		sayf(E_BADCOMMAND, "Unrecognised command: %s", &ui_proto_command_buf);
 	}
 }
