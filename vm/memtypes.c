@@ -39,6 +39,14 @@ struct typemap{
   struct type_layout** layouts; //an array which can be indexed by usertype_t
 };
 
+static inline usertype_t make_pointer_type(usertype_t base, int ptrlevels){
+  usertype_t rtype = 
+    (base & NBIT_MASK(24)) | (((base >> 24) & 0xff) + ptrlevels);
+  assert(get_base_type_name(base) == get_base_type_name(rtype) &&
+         get_ptr_levels(base) + ptrlevels == get_ptr_levels(rtype));
+  return rtype;
+}
+
 
 
 static struct typemap* typemap;
@@ -71,11 +79,7 @@ static usertype_t type_component_from_sexp(struct sexp* t){
     assert(t->nelems==1 && t->elems[0].type==ST_SEXP);
     usertype_t ptype = 
       type_component_from_sexp(t->elems[0].data.sexp);
-    usertype_t rtype = 
-      (ptype & NBIT_MASK(24)) | (((ptype >> 24) & 0xff) + 1);
-    assert(get_base_type_name(ptype) == get_base_type_name(rtype) &&
-           get_ptr_levels(ptype) + 1 == get_ptr_levels(rtype));
-    return rtype;
+    return make_pointer_type(ptype, 1);
   }
   case S_COMPTYPE:
     assert(t->nelems==1 && t->elems[0].type==ST_STRING);
@@ -148,7 +152,7 @@ static void build_type(int idx){
       l->children[path_off] = fieldtype;
       l->bytepos[path_off] = byte_off;
       path_off ++;
-      byte_off += USER_SIZEOF_PTR;
+      byte_off += PRIM_USERSIZE(PT_PTR);
     }else{
       struct type_layout* child_l = typemap->layouts[fieldtype];
       memcpy(l->children + path_off, child_l->children, 
@@ -191,41 +195,14 @@ void build_typemap(int ntypes, struct sexp** types){
   //First of all, add the primitive types
   //Type 0 is void, a pseudo-type used to denote
   //uninitialised memory
-  static const char* primitive_names[] = {
-    [PT_VOID] = "void",
-    [PS_CHAR] = "signed char",
-    [PU_CHAR] = "unsigned char",
-    [PS_SHORT] = "signed short",
-    [PU_SHORT] = "unsigned short",
-    [PS_INT] = "signed int",
-    [PU_INT] = "unsigned int",
-    [PS_LONG_LONG] = "signed long long",
-    [PU_LONG_LONG] = "unsigned long long",
-  };
-  static const int primitive_sizes[] = {
-    [PT_VOID] = 0,
-    [PS_CHAR] = 1,
-    [PU_CHAR] = 1,
-    [PS_SHORT] = 2,
-    [PU_SHORT] = 2,
-    [PS_INT] = 4,
-    [PU_INT] = 4,
-    [PS_LONG_LONG] = 8,
-    [PU_LONG_LONG] = 8,
-  };
-
-  assert(N_PRIMITIVE_DATA_TYPES == 
-         sizeof(primitive_names)/sizeof(char*) &&
-         N_PRIMITIVE_DATA_TYPES == 
-         sizeof(primitive_sizes)/sizeof(int));
 
   for (int i=0;i<N_PRIMITIVE_DATA_TYPES;i++){
-    typemap->names[i] = atom_get(primitive_names[i]);
+    typemap->names[i] = atom_get(PRIM_C_NAME(i));
     struct type_layout* l = malloc(sizeof(struct type_layout));
     memset(l, 0, sizeof(struct type_layout));
     typemap->layouts[i] = l;
     l->flavour = TF_PRIMITIVE;
-    l->size = primitive_sizes[i];
+    l->size = PRIM_USERSIZE(i);
     l->nchildren = 1;
     l->children = malloc(sizeof(usertype_t));
     l->children[0] = (usertype_t)i;
@@ -276,25 +253,9 @@ int get_type_offset(atom base, atom field){
 
 
 
-#define DIV_ROUND_UP(a,b) ((a) + (b) - 1)/(b)
-
-struct blob* blob_alloc(usersize_t size){
-  struct blob* b = malloc(sizeof(struct blob));
-  b->length = size;
-  //Allocate a whole number of userdatas, enough to hold size bytes
-  b->data = malloc(sizeof(userdata) * DIV_ROUND_UP(size, sizeof(userdata)));
-
-  //FIXME: fill in b->data with something
-
-  //The garbage map is allocated one bit per byte of userdata
-  //This is big enough for anything (the most inefficient would be a char array)
-  b->undef_map = bitset_alloc(size);
-  return b;
-}
-
 usersize_t user_sizeof(usertype_t type){
   if (get_ptr_levels(type) > 0){
-    return USER_SIZEOF_PTR;
+    return PRIM_USERSIZE(PT_PTR);
   }else{
     return typemap->layouts[type]->size;
   }
@@ -304,6 +265,10 @@ atom get_base_type_name(usertype_t type){
   return typemap->names[type & NBIT_MASK(24)];
 }
 
+
+// The pointer manipulation (dereferencing, indexing, etc) code.
+
+// Here be dragons.
 
 
 
@@ -352,6 +317,13 @@ struct pointer{
      have to increment it by 1000 before you can dereference
      it. Sadly, people do this kind of thing, and C expressly condones
      it).
+
+     top_type and ctype are never both null at once. If both are present,
+     they are never equal (the situation of top_type == ctype has the same
+     effect as ctype == NULL, the latter is preferred).
+
+     There is one other special case (yay!). If "blob" is NULL, then
+     this pointer is a function pointer, given by path.
   */
   usertype_t top_type;
   int32_t path;
@@ -371,7 +343,7 @@ static struct pointer* ptr_internals(userptr_t p){
   return ht_int_get(ptrtable, p);
 }
 
-static userptr_t ptr_new(struct blob* b, usertype_t top, uint32_t path, usertype_t ctype){
+static inline userptr_t ptr_new(struct blob* b, usertype_t top, int32_t path, usertype_t ctype){
   struct pointer* newptr = malloc(sizeof(struct pointer));
   userptr_t id = max_pointer_id++;
   newptr->blob = b;
@@ -383,46 +355,280 @@ static userptr_t ptr_new(struct blob* b, usertype_t top, uint32_t path, usertype
 }
 
 
+userptr_t pointer_to_function(int fidx){
+  return ptr_new(NULL, 0, fidx, 0);
+}
 
 
+/* Must not be called with function pointers */
 usertype_t pointer_type(userptr_t userptr){
   struct pointer* ptr = ptr_internals(userptr);
   if (ptr->ctype){
     //Programmer is doing something weird.
     return ptr->ctype;
   }else{
+    if (is_ptr_type(ptr->top_type)){
+      return make_pointer_type(ptr->top_type, -1);
+    }else{
+      struct type_layout* layout = typemap->layouts[ptr->top_type];
+      return layout->children[ptr->path];
+    }
+  }
+}
 
+
+//Given that an object appears at point "path" in a blob
+//with toptype "top", what index is it at in the array
+//stored in that blob? This should be a simple division of
+//path by the number of possible paths for that type,
+//but that would fail for negative paths (C rounding behaviour
+//is implementation-defined for negative integer division)
+static inline int get_arrpos(usertype_t top, int path){
+  int pos = abs(path) / typemap->layouts[top]->nchildren;
+  return (path >= 0) ? pos : -pos - 1;
+}
+//same, for ctypes
+static inline int get_arrpos_ctype(usertype_t ctype, int path){
+  int pos = abs(path) / typemap->layouts[ctype]->size;
+  return (path >= 0) ? pos : -pos - 1;
+}
+
+//Return offset from the start of the blob, in bytes
+//Must not be called with function pointers
+static int byte_offset(struct pointer* p){
+  if (p->top_type){
+    //convert from path to byte count
+    usertype_t type = p->top_type;
+    int path = p->path;
+    int arrpos = get_arrpos(p->top_type, path);
+    int objoff;
+    int elem_len;
+    if (is_ptr_type(type)){
+      objoff = 0;
+      elem_len = PRIM_USERSIZE(PT_PTR);
+    }else{
+      struct type_layout* layout = typemap->layouts[type];
+      elem_len = layout->nchildren;
+      int rem_path = path - arrpos * elem_len;
+      assert(rem_path >= 0 && rem_path < layout->nchildren);
+      objoff = layout->bytepos[rem_path];
+    }
+    return arrpos * elem_len + objoff;
+  }else{
+    //path is already in bytes
+    return p->path;
   }
 }
 
 
 
+
+#define DIV_ROUND_UP(a,b) ((a) + (b) - 1)/(b)
+
+struct blob* blob_alloc(usersize_t size, usertype_t type){
+  struct blob* b = malloc(sizeof(struct blob));
+  b->length = size;
+  //Allocate a whole number of userdatas, enough to hold size bytes
+  b->data = malloc(sizeof(userdata) * DIV_ROUND_UP(size, sizeof(userdata)));
+
+  //FIXME: fill in b->data with something better
+  memset(b->data, 42, size);
+  
+  b->pointer = ptr_new(b, type, 0, 0);
+  b->decltype = type;
+  
+  //The garbage map is allocated one bit per byte of userdata
+  //This is big enough for anything (the most inefficient would be a char array)
+  b->undef_map = bitset_alloc(size);
+  return b;
+}
 
 userptr_t pointer_to_blob(struct blob* b, usertype_t type){
-  return ptr_new(b, type, 0, 0);
+  if (type == b->decltype)return b->pointer;
+  else return ptr_new(b,type,0,0);
 }
 
 
+/* This function should satisfy the following property:
+   pointer_index(pointer_index(ptr, i1), i2)
+                      ==
+   pointer_index(ptr, i1 + i2)
+   (where equality is defined as equivalence, not C integer '==') */
 userptr_t pointer_index(userptr_t base_ptr, int idx){
-  struct pointer* base = ptr_internals(base_ptr);
-  if (base->top_type){
-    
-  }else{
-    
+  struct pointer* ptr = ptr_internals(base_ptr);
+  if (!ptr->blob){
+    //function pointer. Bad programmer. Stop that.
+    //Someday, we'll implement arrays of function pointers
+    //Today is not that day.
+    //FIXME: better error message
+    return 0;
   }
+  usertype_t top_type = ptr->top_type, ctype = ptr->ctype;
+  int path = ptr->path;
+  if (top_type){
+    //we can only cleanly index a top_type pointer if the index
+    //is on path 0 (+/- a multiple of nchildren). This corresponds
+    //to indexing an array of structs by iterating over whole structs
+    //rather than silly things like iterating over individual fields as
+    //though they were arrays.
+    if (!is_ptr_type &&
+        abs(path) % typemap->layouts[top_type]->nchildren != 0){
+      //the programmer is trying to use an internal member
+      //of an object (e.g. a struct field) as an array, and index into it.
+      //
+      //the programmer is a bad person
+      
+      //convert to a ctype pointer and carry on
+      ctype = pointer_type(base_ptr);
+      path = byte_offset(ptr);
+      top_type = 0;
+    }
+  }
+  if (ctype){
+    //An offset is being applied while the pointer has a ctype
+    //This will almost certainly result in a garbage pointer, but
+    //we have to do it anyway. In theory, the user could undo their 
+    //changes exactly and still end up with a dereferenceable pointer
+    if (is_ptr_type(ctype))
+      path += idx * PRIM_USERSIZE(PT_PTR);
+    else
+      path += idx * typemap->layouts[ctype]->size;
+  }else{
+    path += idx * typemap->layouts[top_type]->nchildren;
+  }
+  return ptr_new(ptr->blob, top_type, path, ctype);
 }
 
+/* This function should satisfy the following property:
+   pointer_offset(pointer_offset(ptr, o1), o2)
+                      ==
+   pointer_offset(ptr, o1 + o2)
+   (where equality is defined as equivalence, not C integer '==') */
 userptr_t pointer_offset(userptr_t base_ptr, int field){
-  struct pointer* base = ptr_internals(base_ptr);
-  if (base->ctype){
-    //oh shit...
+  struct pointer* ptr = ptr_internals(base_ptr);
+  if (!ptr->blob){
+    //you can't do this to a function pointer
+    //FIXME: error message;
+    return 0;
+  }
+  assert(!is_ptr_type(ptr->ctype));
+
+  if (ptr->ctype){
+    //An offset is being applied while the pointer has a ctype
+    //This will almost certainly result in a garbage pointer, but
+    //we have to do it anyway. In theory, the user could undo their 
+    //changes exactly and still end up with a dereferenceable pointer
+    struct type_layout* layout = typemap->layouts[ptr->ctype];
+    assert(field >= 0 && field < layout->nfields);
+
+    int startpos = byte_offset(ptr);
+    return ptr_new(ptr->blob,
+                   0,
+                   startpos + layout->bytepos[layout->fieldpaths[field]],
+                   layout->children[layout->fieldpaths[field]]);
   }else{
-    if (base_ptr);
+    return ptr_new(ptr->blob,
+                   ptr->top_type,
+                   ptr->path + field,
+                   0);
   }
 }
 
+
+//Make a pointer point to a new top_type without changing
+//what it points to or the type it points to
+//Used to figure out whether a read/write through an unusual
+//type of pointer is valid (oh god, C! why you do?).
+static inline int try_safe_cast(struct pointer* p, usertype_t new_top_type){
+  //If it's a ctype, we have no hope
+  if (!p->top_type)return 0;
+
+  //are we already done?
+  if (p->top_type == new_top_type)return 1;
+
+  //if the types being cast from and to are both pointer types,
+  //well and good (you can store any ptr in any other ptr in C)
+  if (is_ptr_type(p->top_type) && is_ptr_type(new_top_type))return 1;
+  //if either (but not both) are pointer types, bad.
+  if (is_ptr_type(p->top_type) || is_ptr_type(new_top_type))return 0;
+
+  int arrpos = get_arrpos(p->top_type, p->path);
+
+  //if this isn't the first element of the array, bad things
+  //FIXME: there is one case where this is semi-valid, that's
+  //when old and new types are primitive integral types 
+  //differing only in signedness. Implement later, if at all.
+  if (arrpos != 0)return 1;
+
+  //Now, we need to find out if the new type has the right element
+  //in the right plase
+  usertype_t desired_type = p->ctype ? 
+    p->ctype : 
+    typemap->layouts[p->top_type]->children[p->path];
+  
+  //now try to "unify" (in the Prolog sense) the type of the pointer
+  //and the desired type.
+  
+}
 
 userptr_t pointer_cast(userptr_t ptr, usertype_t newtype){
   struct pointer* p = ptr_internals(ptr);
+  if (!p->blob){
+    //FIXME: this, technically, is valid. Damn!
+    return 0;
+  }
   return ptr_new(p->blob, p->top_type, p->path, newtype == p->top_type ? 0 : newtype);
+}
+
+int pointer_deref_function(userptr_t ptr){
+  struct pointer* p = ptr_internals(ptr);
+  if (p->blob){
+    //FIXME: error
+    say(ERROR, "function-deref a non-function ptr");
+    return -1;
+  }
+  return p->path;
+}
+
+primitive_val pointer_deref(userptr_t ptr){
+  struct pointer* p = ptr_internals(ptr);
+  primitive_val ret;
+  if (!p->blob){
+    //dereferencing a function pointer gives itself.
+    //no, I don't know why.
+    ret.type = PT_PTR;
+    ret.valid = 1;
+    USERDATA_PART(ret.value,PT_PTR) = ptr;
+  }else{
+    usertype_t t = pointer_type(ptr);
+    if (is_ptr_type(t)){
+      ret.type = PT_PTR;
+    }else{
+      assert(t && t < N_PRIMITIVE_DATA_TYPES);
+      ret.type = (primtype)t;
+    }
+    if (p->ctype){
+      //silliness
+    }
+    //    blob_read(p->blob, byte_offset(p), &ret);
+    if (p->top_type){
+      //try cast?
+    }
+  }
+  return ret;
+}
+
+void pointer_assign(userptr_t ptr, primitive_val val){
+  struct pointer* p = ptr_internals(ptr);
+  if (!p->blob){
+    //trying to assign to a function
+    //FIXME: error message
+    return;
+  }else{
+    assert(is_ptr_type(pointer_type(ptr)) || pointer_type(ptr) == val.type);
+    if (p->ctype){
+      //silliness
+    }
+    //    blob_write(p->blob, byte_offset(p), val);
+  }
 }
