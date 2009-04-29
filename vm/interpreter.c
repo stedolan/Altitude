@@ -1,4 +1,5 @@
 #include "interpreter.h"
+#include "user_stdlib.h"
 #include <assert.h>
 
 static struct vm_state vm;
@@ -36,11 +37,15 @@ struct location current_location(){
 
 REPTYPE(PS_INT) run(struct program* prog){
   vm.program = prog;
+  vm.now = 0;
+  if (!prog->main_function){
+    say(NO_MAIN, "No main function found");
+    goto abnormal_quit;
+  }
   vm.frame = stackframe_new(NULL, prog->main_function);
   struct blob* mainret = blob_alloc(user_sizeof(PS_INT), PS_INT);
   vm.frame->wants_return = 1;
   vm.frame->return_ptr = pointer_to_blob(mainret, PS_INT);
-  vm.now = 0;
   vm.pc = vm.frame->func->code;
 
 
@@ -54,9 +59,9 @@ REPTYPE(PS_INT) run(struct program* prog){
 
 #define NEEDS_STACK(n)						\
   do{								\
-    if (stacktop < n){						\
+    if (stacktop < (n)){                                        \
       sayf(STACK, "Stack underflow, need %d places, have %d",	\
-	   n, stacktop);					\
+	   (n), stacktop);					\
       goto abnormal_quit;					\
     }								\
   }while(0)
@@ -273,8 +278,8 @@ REPTYPE(PS_INT) run(struct program* prog){
     case VAR_LOAD_FUNC:
       {
 	vm.pc++;
-	int fidx = (int)*vm.pc;
-	if (fidx < 0 || fidx >= vm.program->nfunctions){
+	int fidx = (int)(signed_immediate)*vm.pc;
+	if (fidx < -user_stdlib_count || fidx >= vm.program->nfunctions){
 	  sayf(VARACCESS, "function %d does not exist",
 	       fidx);
 	  goto abnormal_quit;
@@ -298,70 +303,55 @@ REPTYPE(PS_INT) run(struct program* prog){
       }
       break;
     case FUNC_CALL:
+    case FUNC_CALL_NONE:
       {
+        int wants_return = (instr_opcode(*vm.pc) == FUNC_CALL) ? 1 : 0;
         vm.pc++;
         int nargs = (int)*vm.pc;
-        NEEDS_STACK(nargs + 2);//nargs args, 1 function, 1 retval-ptr
+        NEEDS_STACK(nargs + wants_return ? 2 : 1);//nargs args, 1 function, 0-1 retval-ptr
         //FIXME: moar typechecking
         int fidx;
         TRY(pointer_deref_function(&fidx, USERDATA_PART(stack[stacktop-1].value,PT_PTR)));
-        struct function* func = &vm.program->functions[fidx];
-        vm.frame = stackframe_new(vm.frame, func);
-        vm.frame->wants_return = 1;
-        vm.frame->return_ptr = USERDATA_PART(stack[stacktop-nargs-2].value,PT_PTR);
-        vm.frame->return_addr = vm.pc;
-        stacktop -= 1;
-        //copy in args
-        if (nargs != vm.frame->func->nformals){
-          say(INSTR, "wrong number of arguments passed to function");
-          goto abnormal_quit;
-        }
-        if (stacktop != nargs + 1){
+        stacktop--; //pop function addr
+        if (stacktop != nargs + (wants_return ? 1 : 0)){
           say(STACK, "stack not empty after function call");
           goto abnormal_quit;
         }
+        if (fidx >= 0){
+          //user function
+          struct function* func = &vm.program->functions[fidx];
+          vm.frame = stackframe_new(vm.frame, func);
+          vm.frame->wants_return = wants_return;
+          if (wants_return)
+            vm.frame->return_ptr = USERDATA_PART(stack[stacktop-nargs-1].value,PT_PTR);
+          vm.frame->return_addr = vm.pc;
+          //copy in args
+          if (nargs != vm.frame->func->nformals){
+            say(INSTR, "wrong number of arguments passed to function");
+            goto abnormal_quit;
+          }
 
-        for (int i=0;i<nargs;i++){
-          TRY(pointer_assign(pointer_to_blob(vm.frame->locals[nargs-i-1],
-                                             vm.frame->func->formals[nargs-i-1].type),
-                             stack[--stacktop]));
-        }
-        stacktop --;
-        assert(stacktop == 0);
-
-        vm.pc = vm.frame->func->code - 1;//-1 to handle the vm.pc++ below
-      }
-      break;
-    case FUNC_CALL_NONE:
-      {
-        vm.pc++;
-        int nargs = (int)*vm.pc;
-        NEEDS_STACK(nargs + 1);
-        //FIXME: types
-        int fidx;
-        TRY(pointer_deref_function(&fidx, USERDATA_PART(stack[stacktop-1].value,PT_PTR)));
-        struct function* func = &vm.program->functions[fidx];
-        vm.frame = stackframe_new(vm.frame,func);
-        vm.frame->wants_return = 0;
-        vm.frame->return_addr = vm.pc;
-        stacktop--;
-        //copy in args
-        if (nargs != vm.frame->func->nformals){
-          say(INSTR, "wrong number of arguments passed to function");
-          goto abnormal_quit;
-        }
-        if (stacktop != nargs){
-          say(STACK, "stack not empty after function call");
-          goto abnormal_quit;
-        }
-
-        for (int i=0;i<nargs;i++){
-          TRY(pointer_assign(pointer_to_blob(vm.frame->locals[nargs-i-1],
-                                             vm.frame->func->formals[nargs-i-1].type),
-                             stack[--stacktop]));
+          
+          for (int i=0;i<nargs;i++){
+            TRY(pointer_assign(pointer_to_blob(vm.frame->locals[nargs-i-1],
+                                               vm.frame->func->formals[nargs-i-1].type),
+                               stack[--stacktop]));
+          }
+          if (wants_return)
+            stacktop --;//pop off return ptr
+          assert(stacktop == 0);
+          vm.pc = vm.frame->func->code - 1;//-1 to handle the vm.pc++ below
+        }else{
+          //syscall
+          fidx = -fidx - 1;
+          assert(fidx >= 0 && fidx < user_stdlib_count);
+          system_function syscall = user_stdlib_funcs[fidx];
+          userptr_t retptr = 0;
+          if (wants_return) retptr = USERDATA_PART(stack[stacktop - nargs - 1].value,PT_PTR);
+          TRY((*syscall)(wants_return, retptr, nargs, stack + wants_return));
+          stacktop = 0;
         }
 
-        vm.pc = vm.frame->func->code - 1;//-1 to handle the vm.pc++ below
       }
       break;
     case FUNC_RETURN: NEEDS_STACK(1);

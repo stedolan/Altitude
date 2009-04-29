@@ -72,10 +72,6 @@ op(PTR_INDEX,    0,2,1)
 //offset into a struct or union (i.e. point to a field)
 op(PTR_OFFSET,   1,1,1)
 
-//memory allocation
-op(PTR_MALLOC,   0,1,1)
-op(PTR_FREE,     0,1,0)
-
 //arithmetic
 op(PTR_DIFF,     0,2,1)
 op(PTR_TO_LL,    0,1,1)

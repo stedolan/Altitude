@@ -62,6 +62,7 @@ typedef enum{
 
   //VM errors, should all be impossible due to compilation process
   //checking them ahead-of-time
+  //These exist to debug Altitude itself
   E_INSTR, //illegal instruction executed
   E_STACK, //stack underflow in vm
   E_STACKTYPE, //bad types on stack in vm
@@ -78,12 +79,14 @@ typedef enum{
   E_PTR_CAST, //strange or invalid cast
   E_DUBIOUS_READ, //read of a dubious (uninitialised or undefined) value
   E_DUBIOUS_WRITE, //write of a dubious (uninitialised or undefined) value
+  E_DUBIOUS_SYSCALL_INVOCATION, //strange usage of a system call
   
   /* 200-299
      User errors. The user did something which was definitely wrong
      (i.e. may cause a segfault or other crash in a real
      implementation, or provably corrupts data) */
   E_GENERIC_USERERR = 200,
+  E_NO_MAIN, //no main function
   E_NULL_READ, //read from a null pointer
   E_NULL_WRITE, //write to a null pointer
   E_INVALID_READ, //read out of valid memory space (e.g. buffer overflow)
@@ -91,6 +94,8 @@ typedef enum{
   E_UNALIGNED_READ, //misaligned read
   E_UNALIGNED_WRITE, //misaligned write
   E_PTR_CHANGE_INVAL, //bad offset or index of a pointer
+
+  E_BAD_SYSCALL_ARGS, //bad arguments to a system call
 
   /* 300-399
      UI related "errors" - events to notify the UI about which aren't exactly

@@ -16,7 +16,7 @@ let rec pSexpLoc ?(sep=break) (loc: location) (tag: string) (children: doc list)
   text "(" ++ locdata ++ text tag
     ++ (match children with
       [] -> text ")"
-    | _ -> sep ++ align ++ seq sep (fun x -> x) children ++ text ")" ++ unalign) 
+    | _ -> break ++ align ++ seq sep (fun x -> x) children ++ text ")" ++ unalign) 
     
 and pStr (s: string) = chr '"' ++ text (escape_string s) ++ chr '"'
 
@@ -424,8 +424,8 @@ and dsGlobal (out: out_channel) (g: global) : unit =
   fprint out !lineLength ((match g with
     GFun (fdec, l) -> pSexpLoc ~sep:line l "function" [
       pStr fdec.svar.vname;
-      pSexp "formals" (List.map (psVarDecl l) fdec.sformals);
-      pSexp "locals" (List.map (psVarDecl l) fdec.slocals);
+      pSexp ~sep:line "formals" (List.map (psVarDecl l) fdec.sformals);
+      pSexp ~sep:line "locals" (List.map (psVarDecl l) fdec.slocals);
       pSexp "body" [psBlock () None None fdec.sbody]
     ]
   | GVar (vi, io, l) -> 

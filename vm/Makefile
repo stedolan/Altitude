@@ -52,8 +52,11 @@ interpreter.o: interpreter.c interpreter.h
 callstack.o: callstack.c callstack.h
 	$(OBJCOMP) callstack.c
 
-altitude: main.o error.o sexp.o hashtable.o bitops.o atom.o bytecode.o memtypes.o interpreter.o callstack.o
-	gcc main.o error.o sexp.o hashtable.o bitops.o atom.o bytecode.o memtypes.o interpreter.o callstack.o -o altitude
+user_stdlib.o: user_stdlib.c user_stdlib.h
+	$(OBJCOMP) user_stdlib.c
+
+altitude: main.o error.o sexp.o hashtable.o bitops.o atom.o bytecode.o memtypes.o interpreter.o callstack.o user_stdlib.o
+	gcc main.o error.o sexp.o hashtable.o bitops.o atom.o bytecode.o memtypes.o interpreter.o callstack.o user_stdlib.o -o altitude
 
 clean:
 	rm *.o

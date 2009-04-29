@@ -17,6 +17,8 @@ const char* sexp_names[]={
 
 
   [S_INT] = "int",
+  [S_VOID] = "void",
+  
   [S_TYPE] = "type",
   [S_PTR] = "ptr",
   [S_ARRAY] = "array",

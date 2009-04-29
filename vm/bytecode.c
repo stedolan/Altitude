@@ -7,6 +7,7 @@
 #include "sexp.h"
 #include "hashtable.h"
 #include "error.h"
+#include "user_stdlib.h"
 
 
 void build_var_decls(int size, struct sexp_element* decllist, int* outsize, struct var_decl** outvars){
@@ -48,7 +49,7 @@ static void* new_int(int x){
   return p;
 }
 
-static void compile_function(struct sexp* f, struct function* ret, ht_atom_t funcnames){
+static void compile_function(struct sexp* f, struct function* ret, ht_atom_t funcnames, ht_atom_t syscall_names){
   if (!(f->nelems == 4 && 
         f->elems[0].type == ST_STRING &&
 	is_sexp_with_tag(f->elems[1], S_FORMALS) &&
@@ -145,8 +146,21 @@ static void compile_function(struct sexp* f, struct function* ret, ht_atom_t fun
       ret->code[codepos++] = find_local_var(ret, instr->elems[0].data.string);
       break;
     case S_LOAD_F:
-      ret->code[codepos++] = build_instr_untyped(VAR_LOAD_FUNC);
-      ret->code[codepos++] = (instruction)(((struct function*)ht_atom_get(funcnames, instr->elems[0].data.string))->ID);
+      {
+        ret->code[codepos++] = build_instr_untyped(VAR_LOAD_FUNC);
+        atom fname = instr->elems[0].data.string;
+        struct function* func = ht_atom_get(funcnames, fname);
+        if (func){
+          ret->code[codepos++] = (instruction)(signed_immediate)func->ID;
+        }else{
+          int* syscall = ht_atom_get(syscall_names, fname);
+          if (syscall){
+            ret->code[codepos++] = (instruction)(signed_immediate)(-1 - *syscall);
+          }else{
+            sayf(COMPILE,"Unknown function %s", fname->string);
+          }
+        }
+      }
       break;
     case S_LOAD_G:
       //FIXME
@@ -290,12 +304,21 @@ struct program* compile(struct sexp* code){
     program->functions[i].ID = i;
     ht_atom_set(funcnames, functions[i]->elems[0].data.string, &program->functions[i]);
   }
+  ht_atom_t syscall_names = ht_atom_alloc();
+  for (int i=0;i<user_stdlib_count;i++){
+    ht_atom_set(syscall_names, atom_get(user_stdlib_names[i]), new_int(i));
+  }
   program->main_function = ht_atom_get(funcnames, atom_get("main"));
   
   for (int i=0;i<nfunctions;i++){
-    compile_function(functions[i], &program->functions[i], funcnames);
+    compile_function(functions[i], &program->functions[i], funcnames, syscall_names);
   }
   ht_atom_free(funcnames);
+  for (ht_atom_iter i = ht_atom_begin(syscall_names);
+       ht_atom_hasmore(i);
+       i = ht_atom_next(i))
+    free(ht_atom_getvalue(i));
+  ht_atom_free(syscall_names);
   free(functions);
   
   return program;

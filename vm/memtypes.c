@@ -39,11 +39,13 @@ struct typemap{
   struct type_layout** layouts; //an array which can be indexed by usertype_t
 };
 
-static inline usertype_t make_pointer_type(usertype_t base, int ptrlevels){
-  usertype_t rtype = 
-    (base & NBIT_MASK(24)) | (((base >> 24) & 0xff) + ptrlevels);
-  assert(get_base_type_name(base) == get_base_type_name(rtype) &&
-         get_ptr_levels(base) + ptrlevels == get_ptr_levels(rtype));
+static inline usertype_t make_pointer_type(usertype_t orig, int ptrlevels){
+  usertype_t basetype = orig & NBIT_MASK(24);
+  int orig_ptrlevels = ((orig >> 24) & NBIT_MASK(8));
+  int new_ptrlevels = ptrlevels + orig_ptrlevels;
+  usertype_t rtype = basetype | (new_ptrlevels << 24);
+  assert(get_base_type_name(orig) == get_base_type_name(rtype) &&
+         get_ptr_levels(orig) + ptrlevels == get_ptr_levels(rtype));
   return rtype;
 }
 
@@ -79,13 +81,18 @@ static int typeidx_by_name(atom name){
 
 
 //FIXME: usage of assert is odd
-static usertype_t type_component_from_sexp(struct sexp* t){
+usertype_t type_from_sexp(struct sexp* s){
+  assert(s->tag == S_TYPE &&
+         s->nelems == 1 &&
+         s->elems[0].type == ST_SEXP);
+  struct sexp* t = s->elems[0].data.sexp;
   switch (t->tag){
   case S_INT:return (usertype_t)PS_INT;
+  case S_VOID:return (usertype_t)PT_VOID;
   case S_PTR:{
     assert(t->nelems==1 && t->elems[0].type==ST_SEXP);
     usertype_t ptype = 
-      type_component_from_sexp(t->elems[0].data.sexp);
+      type_from_sexp(t->elems[0].data.sexp);
     return make_pointer_type(ptype, 1);
   }
   case S_COMPTYPE:
@@ -104,12 +111,6 @@ static usertype_t type_component_from_sexp(struct sexp* t){
   }
 }
 
-usertype_t type_from_sexp(struct sexp* s){
-  assert(s->tag == S_TYPE &&
-         s->nelems == 1 &&
-         s->elems[0].type == ST_SEXP);
-  return type_component_from_sexp(s->elems[0].data.sexp);
-}
 
 
 
@@ -376,24 +377,6 @@ userptr_t pointer_to_function(int fidx){
   return ptr_new(NULL, 0, fidx, 0);
 }
 
-
-/* Must not be called with function pointers */
-usertype_t pointer_type(userptr_t userptr){
-  struct pointer* ptr = ptr_internals(userptr);
-  if (ptr->ctype){
-    //Programmer is doing something weird.
-    return ptr->ctype;
-  }else{
-    if (is_ptr_type(ptr->top_type)){
-      return make_pointer_type(ptr->top_type, -1);
-    }else{
-      struct type_layout* layout = typemap->layouts[ptr->top_type];
-      return layout->children[ptr->path];
-    }
-  }
-}
-
-
 //Given that an object appears at point "path" in a blob
 //with toptype "top", what index is it at in the array
 //stored in that blob? This should be a simple division of
@@ -410,6 +393,27 @@ static inline int get_arrpos_ctype(usertype_t ctype, int path){
   return (path >= 0) ? pos : -pos - 1;
 }
 
+
+
+/* Must not be called with function pointers */
+usertype_t pointer_type(userptr_t userptr){
+  struct pointer* ptr = ptr_internals(userptr);
+  if (ptr->ctype){
+    //Programmer is doing something weird.
+    return ptr->ctype;
+  }else{
+    if (is_ptr_type(ptr->top_type)){
+      return ptr->top_type;
+    }else{
+      int arrpos = get_arrpos(ptr->top_type, ptr->path);
+      struct type_layout* layout = typemap->layouts[ptr->top_type];
+      return layout->children[ptr->path - arrpos * layout->nchildren];
+    }
+  }
+}
+
+
+
 //Return offset from the start of the blob, in bytes
 //Must not be called with function pointers
 static int byte_offset(struct pointer* p){
@@ -417,20 +421,15 @@ static int byte_offset(struct pointer* p){
     //convert from path to byte count
     usertype_t type = p->top_type;
     int path = p->path;
-    int arrpos = get_arrpos(p->top_type, path);
-    int objoff;
-    int elem_len;
     if (is_ptr_type(type)){
-      objoff = 0;
-      elem_len = PRIM_USERSIZE(PT_PTR);
+      return p->path * PRIM_USERSIZE(PT_PTR);
     }else{
+      int arrpos = get_arrpos(p->top_type, path);
       struct type_layout* layout = typemap->layouts[type];
-      elem_len = layout->nchildren;
-      int rem_path = path - arrpos * elem_len;
+      int rem_path = path - arrpos * layout->nchildren;
       assert(rem_path >= 0 && rem_path < layout->nchildren);
-      objoff = layout->bytepos[rem_path];
+      return arrpos * layout->nchildren + layout->bytepos[rem_path];
     }
-    return arrpos * elem_len + objoff;
   }else{
     //path is already in bytes
     return p->path;
