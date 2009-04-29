@@ -3,6 +3,7 @@
 
 #include "sexp.h"
 #include "bytecode.h"
+#include "interpreter.h"
 
 #define MAXFILE (1024*1024)
 
@@ -26,11 +27,14 @@ int main(int argc, char** argv){
     fprintf(stderr, "Couldn't parse s-expressions in %s", argv[1]);
     exit(1);
   }
-
   struct program* program = compile(sexpcode);
+  sexp_free(sexpcode);
+
   if (!program){
     fprintf(stderr, "Couldn't compile\n");
     exit(1);
   }
   program_dump(program);
+  printf("Program returned %d\n", run(program));
+  return 0;
 }

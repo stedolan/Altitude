@@ -16,6 +16,9 @@ struct vm_state{
   /* The current stack frame */
   struct stackframe* frame;
   
+  /* The program counter */
+  instruction* pc;
+  
   uint64_t now; //"time": the number of instructions executed.
 };
 

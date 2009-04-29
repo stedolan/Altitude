@@ -41,6 +41,9 @@ typedef union {
 #undef prim
 } userdata;
 
+#define USERSIZE_USERDATA sizeof(uint64_t)
+
+
 //To get or set a userdata, use USERDATA_PART
 //e.g. printf("%d\n", USERDATA_PART(userdata, PS_INT));
 //     USERDATA_PART(userdata,PS_INT) = 5;
@@ -152,7 +155,7 @@ struct blob{
   usertype_t top_type;
   /* Map showing whether each element of data[] has a well-defined
      value */
-  bitset_t undef_map;
+  bitset_t valid_map;
 
   /* Pointer to the start of the blob */
   /* Has type "void*" for heap allocs */
@@ -169,8 +172,7 @@ struct blob* blob_alloc(usersize_t length, usertype_t type);
 
 /* Pointer manipulation */
 
-/* returns the type of the object pointed to by this pointer.
-   Argument must be a pointer type. */
+/* returns the type of the object pointed to by this pointer. */
 usertype_t pointer_type(userptr_t);
 
 /* returns a pointer to the start of a given blob */
@@ -179,25 +181,28 @@ userptr_t pointer_to_blob(struct blob*, usertype_t type);
 /* returns a pointer to the function given by fidx */
 userptr_t pointer_to_function(int fidx);
 
+/* These functions return a true value if successful.
+   If unsuccessful, the program should exit. */
+
 /* index into an array */
-userptr_t pointer_index(userptr_t, int index);
+int pointer_index(userptr_t*, userptr_t, int index);
 
 /* point to a member of a struct or union */
-userptr_t pointer_offset(userptr_t, int field);
+int pointer_offset(userptr_t*, userptr_t, int field);
 
 /* cast a pointer to a pointer of another type */
-userptr_t pointer_cast(userptr_t, usertype_t newtype);
+int pointer_cast(userptr_t*, userptr_t, usertype_t newtype);
 
 /* return what's pointed to by a given pointer. Pointer must point to
    a primitive */
-primitive_val pointer_deref(userptr_t);
+int pointer_deref(primitive_val*, userptr_t);
 
 /* return what's pointed to by a given function pointer */
-int pointer_deref_function(userptr_t);
+int pointer_deref_function(int*, userptr_t);
 
 /* put something in the space pointed to by a given pointer. Must be a
    primitive, and pointer must point to a primitive */
-void pointer_assign(userptr_t, primitive_val);
+int pointer_assign(userptr_t, primitive_val);
 
 
 #endif

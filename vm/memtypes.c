@@ -48,6 +48,13 @@ static inline usertype_t make_pointer_type(usertype_t base, int ptrlevels){
 }
 
 
+// ceil(a/b), for positive b and non-negative a
+#define DIV_ROUND_UP(a,b) ((a) + (b) - 1)/(b)
+
+// min x such that x >= a and x % b == 0
+// for positive b and non-negative a
+#define ROUND_UP(a,b) DIV_ROUND_UP(a,b)*b
+
 
 static struct typemap* typemap;
 static ht_int_t ptrtable;
@@ -152,7 +159,10 @@ static void build_type(int idx){
       l->children[path_off] = fieldtype;
       l->bytepos[path_off] = byte_off;
       path_off ++;
-      byte_off += PRIM_USERSIZE(PT_PTR);
+      if (l->flavour == TF_STRUCT || l->flavour == TF_UNION)
+        byte_off += ROUND_UP(PRIM_USERSIZE(PT_PTR), USERSIZE_USERDATA);
+      else
+        byte_off += PRIM_USERSIZE(PT_PTR);
     }else{
       struct type_layout* child_l = typemap->layouts[fieldtype];
       memcpy(l->children + path_off, child_l->children, 
@@ -163,7 +173,10 @@ static void build_type(int idx){
         l->bytepos[path_off + i] += byte_off;
       }
       path_off += child_l->nchildren;
-      byte_off += child_l->size;
+      if (l->flavour == TF_STRUCT || l->flavour == TF_UNION)
+        byte_off += ROUND_UP(child_l->size, USERSIZE_USERDATA);
+      else
+        byte_off += child_l->size;
     }
   }
   l->size = byte_off;
@@ -222,6 +235,10 @@ void build_typemap(int ntypes, struct sexp** types){
       atom name = t->elems[0].data.string;
       int typeidx = typeidx_by_name(name);
       typemap->layouts[typeidx]->definition = t->elems[1].data.sexp;
+      if (t->tag == S_STRUCT)
+        typemap->layouts[typeidx]->flavour = TF_STRUCT;
+      else if (t->tag == S_UNION)
+        typemap->layouts[typeidx]->flavour = TF_UNION;
     }else{
       goto bad;
     }
@@ -423,7 +440,6 @@ static int byte_offset(struct pointer* p){
 
 
 
-#define DIV_ROUND_UP(a,b) ((a) + (b) - 1)/(b)
 
 struct blob* blob_alloc(usersize_t size, usertype_t type){
   struct blob* b = malloc(sizeof(struct blob));
@@ -437,9 +453,10 @@ struct blob* blob_alloc(usersize_t size, usertype_t type){
   b->pointer = ptr_new(b, type, 0, 0);
   b->decltype = type;
   
-  //The garbage map is allocated one bit per byte of userdata
+  //The valid map is allocated one bit per byte of userdata
   //This is big enough for anything (the most inefficient would be a char array)
-  b->undef_map = bitset_alloc(size);
+  b->valid_map = bitset_alloc(size);
+  bitset_clear(b->valid_map);
   return b;
 }
 
@@ -454,13 +471,14 @@ userptr_t pointer_to_blob(struct blob* b, usertype_t type){
                       ==
    pointer_index(ptr, i1 + i2)
    (where equality is defined as equivalence, not C integer '==') */
-userptr_t pointer_index(userptr_t base_ptr, int idx){
+int pointer_index(userptr_t* ret, userptr_t base_ptr, int idx){
   struct pointer* ptr = ptr_internals(base_ptr);
   if (!ptr->blob){
     //function pointer. Bad programmer. Stop that.
     //Someday, we'll implement arrays of function pointers
     //Today is not that day.
-    //FIXME: better error message
+
+    say(PTR_CHANGE_INVAL, "Trying to index function pointer");
     return 0;
   }
   usertype_t top_type = ptr->top_type, ctype = ptr->ctype;
@@ -471,13 +489,15 @@ userptr_t pointer_index(userptr_t base_ptr, int idx){
     //to indexing an array of structs by iterating over whole structs
     //rather than silly things like iterating over individual fields as
     //though they were arrays.
-    if (!is_ptr_type &&
+    if (!is_ptr_type(top_type) &&
         abs(path) % typemap->layouts[top_type]->nchildren != 0){
       //the programmer is trying to use an internal member
       //of an object (e.g. a struct field) as an array, and index into it.
       //
       //the programmer is a bad person
-      
+
+      //Eventually, when we implement member arrays, this will be valid
+
       //convert to a ctype pointer and carry on
       ctype = pointer_type(base_ptr);
       path = byte_offset(ptr);
@@ -496,7 +516,8 @@ userptr_t pointer_index(userptr_t base_ptr, int idx){
   }else{
     path += idx * typemap->layouts[top_type]->nchildren;
   }
-  return ptr_new(ptr->blob, top_type, path, ctype);
+  *ret = ptr_new(ptr->blob, top_type, path, ctype);
+  return 1;
 }
 
 /* This function should satisfy the following property:
@@ -504,34 +525,37 @@ userptr_t pointer_index(userptr_t base_ptr, int idx){
                       ==
    pointer_offset(ptr, o1 + o2)
    (where equality is defined as equivalence, not C integer '==') */
-userptr_t pointer_offset(userptr_t base_ptr, int field){
+int pointer_offset(userptr_t* ret, userptr_t base_ptr, int field){
   struct pointer* ptr = ptr_internals(base_ptr);
   if (!ptr->blob){
     //you can't do this to a function pointer
     //FIXME: error message;
+    say(PTR_CHANGE_INVAL, "Trying to get a field of a function");
     return 0;
   }
-  assert(!is_ptr_type(ptr->ctype));
 
   if (ptr->ctype){
     //An offset is being applied while the pointer has a ctype
     //This will almost certainly result in a garbage pointer, but
     //we have to do it anyway. In theory, the user could undo their 
     //changes exactly and still end up with a dereferenceable pointer
+    assert(!is_ptr_type(ptr->ctype));
     struct type_layout* layout = typemap->layouts[ptr->ctype];
     assert(field >= 0 && field < layout->nfields);
-
-    int startpos = byte_offset(ptr);
-    return ptr_new(ptr->blob,
+    say(PTR_CHANGE, "Suspicious pointer arithmetic");
+    *ret = ptr_new(ptr->blob,
                    0,
-                   startpos + layout->bytepos[layout->fieldpaths[field]],
+                   ptr->path + layout->bytepos[layout->fieldpaths[field]],
                    layout->children[layout->fieldpaths[field]]);
   }else{
-    return ptr_new(ptr->blob,
+    assert(!is_ptr_type(ptr->top_type));
+    assert(ptr->path + field < typemap->layouts[ptr->top_type]->nchildren);
+    *ret = ptr_new(ptr->blob,
                    ptr->top_type,
                    ptr->path + field,
                    0);
   }
+  return 1;
 }
 
 
@@ -569,66 +593,142 @@ static inline int try_safe_cast(struct pointer* p, usertype_t new_top_type){
   //now try to "unify" (in the Prolog sense) the type of the pointer
   //and the desired type.
   
+  //FIXME: for now, don't bother
+  return 0;
 }
 
-userptr_t pointer_cast(userptr_t ptr, usertype_t newtype){
+int pointer_cast(userptr_t* ret, userptr_t ptr, usertype_t newtype){
   struct pointer* p = ptr_internals(ptr);
   if (!p->blob){
     //FIXME: this, technically, is valid. Damn!
+    say(PTR_CAST, "Casting function pointers is not supported (yet)");
     return 0;
   }
-  return ptr_new(p->blob, p->top_type, p->path, newtype == p->top_type ? 0 : newtype);
+  if (p->top_type && p->path == 0){
+    //FIXME: strictly, we should do this for signed-unsigned casts as well
+    *ret = ptr_new(p->blob, newtype, 0, 0);
+    return 1;
+  }else{
+    *ret = ptr_new(p->blob, p->top_type, p->path, newtype == p->top_type ? 0 : newtype);
+    return 1;
+  }
 }
 
-int pointer_deref_function(userptr_t ptr){
+int pointer_deref_function(int* ret, userptr_t ptr){
   struct pointer* p = ptr_internals(ptr);
   if (p->blob){
     //FIXME: error
-    say(ERROR, "function-deref a non-function ptr");
-    return -1;
+    say(INVALID_READ, "Trying to call something which isn't a function");
+    return 0;
   }
-  return p->path;
+  *ret = p->path;
+  return 1;
 }
 
-primitive_val pointer_deref(userptr_t ptr){
+static int blob_read(struct blob* b, int pos, primitive_val* val){
+  //FIXME: alignment restrictions
+  //FIXME: better errors
+  if (pos & 7){
+    say(UNALIGNED_READ, "Bad read");
+    val->valid = 0;
+    return 0;
+  }
+  if (pos < 0 || pos >= b->length){
+    say(INVALID_READ, "Out-of-bounds memory access");
+    val->valid = 0;
+    return 0;
+  }
+  int idx = pos >> 3;
+  val->value = b->data[idx];
+  val->valid = bitset_get(b->valid_map, pos);
+  if (!val->valid){
+    say(DUBIOUS_READ, "Seemingly uninitialised or undefined value read");
+  }
+  return 1;
+}
+
+int pointer_deref(primitive_val* ret, userptr_t ptr){
   struct pointer* p = ptr_internals(ptr);
-  primitive_val ret;
   if (!p->blob){
     //dereferencing a function pointer gives itself.
     //no, I don't know why.
-    ret.type = PT_PTR;
-    ret.valid = 1;
-    USERDATA_PART(ret.value,PT_PTR) = ptr;
+    ret->type = PT_PTR;
+    ret->valid = 1;
+    USERDATA_PART(ret->value,PT_PTR) = ptr;
+    return 1;
   }else{
     usertype_t t = pointer_type(ptr);
     if (is_ptr_type(t)){
-      ret.type = PT_PTR;
+      ret->type = PT_PTR;
     }else{
       assert(t && t < N_PRIMITIVE_DATA_TYPES);
-      ret.type = (primtype)t;
+      ret->type = (primtype)t;
     }
     if (p->ctype){
-      //silliness
-    }
-    //    blob_read(p->blob, byte_offset(p), &ret);
-    if (p->top_type){
-      //try cast?
+      say(DUBIOUS_READ, "Reading through a pointer not known to be valid");
+      return blob_read(p->blob, p->path, ret);
+    }else{
+      struct pointer fixed = *p;
+      if (try_safe_cast(&fixed, p->top_type)){
+        //oh good, this is valid
+        return blob_read(p->blob, byte_offset(&fixed), ret);
+      }else{
+        say(DUBIOUS_READ, "Seemingly badly-typed read");
+        //reading garbage, most likely. Do it anyway.
+        int status = blob_read(p->blob, byte_offset(p), ret);
+        //even though there may have been something
+        //valid at that address, this read was not valid.
+        ret->valid = 0;
+        return status;
+      }
     }
   }
-  return ret;
 }
 
-void pointer_assign(userptr_t ptr, primitive_val val){
+static int blob_write(struct blob* b, int pos, primitive_val val){
+  //FIXME: alignment restrictions aren't this tight,
+  //especially for arrays of a primitive type
+  if (pos & 7){
+    say(UNALIGNED_WRITE, "Bad write");
+    return 0;
+  }
+  if (pos <0 || pos >= b->length){
+    say(INVALID_WRITE, "Out-of-bounds write");
+    return 0;
+  }
+  int idx = pos >> 3;
+
+  //FIXME: what happens when small types are written
+  //FIXME: endian-ness
+  b->data[idx] = val.value;
+  bitset_set(b->valid_map, pos, 1);
+  return 1;
+}
+
+int pointer_assign(userptr_t ptr, primitive_val val){
   struct pointer* p = ptr_internals(ptr);
   if (!p->blob){
     //trying to assign to a function
     //FIXME: error message
-    return;
+    say(INVALID_READ, "Trying to assign to a function");
+    return 0;
   }else{
     assert(is_ptr_type(pointer_type(ptr)) || pointer_type(ptr) == val.type);
     if (p->ctype){
-      //silliness
+      say(DUBIOUS_WRITE, "Writing through a pointer not known to be valid");
+      return blob_write(p->blob, p->path, val);
+    }else{
+      struct pointer fixed = *p;
+      if (try_safe_cast(&fixed, p->top_type)){
+        //the pointer "fits" into what's actually in memory. Oh good.
+      }else{
+        //the pointer doesn't fit, invalidate the entire blob
+        say(DUBIOUS_WRITE, "Write has invalidated previous contents of memory");
+        p->blob->top_type = p->top_type;
+        bitset_clear(p->blob->valid_map);
+      }
+      assert(byte_offset(&fixed) == byte_offset(p));
+      return blob_write(p->blob, byte_offset(&fixed), val);
     }
-    //    blob_write(p->blob, byte_offset(p), val);
   }
 }

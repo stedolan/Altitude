@@ -57,9 +57,6 @@ op(LOG_OR,       0,2,1)
 op(LOG_NOT,      0,1,1)
 
 
-//no-op, pop something off the stack and ignore it
-op(NOOP_POP,     0,1,0)
-
 
   
 /////// Pointer manipulation

@@ -120,6 +120,10 @@ atom atom_addref(atom a){
   return a;
 }
 void atom_decref(atom a){
+  //FIXME: atom_decref is disabled for now, 
+  //too much badly-written code isn't using addref
+  //properly :P
+  return;
   if (!a) return;
   table_init();
   a->refcnt--;

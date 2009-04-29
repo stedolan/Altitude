@@ -67,6 +67,11 @@ struct function{
   /* Actual code */
   int codelen;
   instruction* code;
+  
+  /* Location information for debugging */
+  int nlocs;
+  struct location* locs;
+  int* locpos;
 };
 
 
@@ -86,6 +91,10 @@ void function_dump(struct function*);
 void program_dump(struct program*);
 
 typedef enum{
+  /* this is a hack to make sure 0 is not a valid opcode */
+  /* bugs have caused the VM to try and execute silly things 
+     which are often 0, so making it illegal is handy */
+  ILLEGAL = 0, 
 #define op(name, imm, in, out) name,
 #include "opcodes.h"
 #undef op

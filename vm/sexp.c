@@ -266,10 +266,6 @@ static void fill_in_location(struct sexp* s){
       if (loc->filename == NULL){
 	loc->filename = atom_addref(default_loc->filename);
       }
-      if (loc->line == -1){
-	loc->line = default_loc->line;
-	loc->bytepos = default_loc->bytepos;
-      }
       fill_in_location(s->elems[i].data.sexp);
     }
   }
@@ -282,9 +278,7 @@ struct sexp* sexp_parse(char* s){
     return NULL;
   }
   if (!ret->location.filename){
-    ret->location.filename = atom_get("[unknown file]");
-    ret->location.line=0;
-    ret->location.bytepos=0;
+    ret->location = unknown_location();
   }
   fill_in_location(ret);
   return ret;

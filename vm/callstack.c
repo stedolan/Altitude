@@ -26,12 +26,11 @@ struct stackframe* stackframe_new(struct stackframe* caller, struct function* ca
   
   if (caller){
     //if this is not "int main()"
-    caller->invoked_pos++;
+    caller->invoked[caller->invoked_pos++] = frame;
     if (caller->invoked_pos >= caller->invoked_cap){
       caller->invoked_cap *= 2;
       caller->invoked = realloc(caller->invoked, caller->invoked_cap * sizeof(struct stackframe*));
     }
-    caller->invoked[caller->invoked_pos] = frame;
   }
   return frame;
 }

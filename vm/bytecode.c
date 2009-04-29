@@ -81,6 +81,12 @@ static void compile_function(struct sexp* f, struct function* ret, ht_atom_t fun
   int constpos = 0;
   ret->consts = malloc(sizeof(primitive_val) * ret->nconsts);
   
+  ret->nlocs = 20;
+  int locpos = 0;
+  ret->locs = malloc(sizeof(struct location) * ret->nlocs);
+  ret->locpos = malloc(sizeof(int) * ret->nlocs);
+
+
   int ninstructions = f->elems[3].data.sexp->nelems;
 
   /* maps labels to their position in the code */
@@ -93,6 +99,13 @@ static void compile_function(struct sexp* f, struct function* ret, ht_atom_t fun
   //FIXME: doesn't do much error-checking, will crash or silently corrupt on bad input
   for (int i=0;i<ninstructions;i++){
     struct sexp* instr = body->elems[i].data.sexp;
+
+    if (instr->location.line != -1){
+      ret->locs[locpos] = instr->location;
+      ret->locpos[locpos] = codepos;
+      locpos++;
+    }
+
     switch (instr->tag){
     case S_PLUS_INT:   ret->code[codepos++] = build_instr_typed(ARITH_PLUS, PS_INT);break;
     case S_PLUS_SHORT: ret->code[codepos++] = build_instr_typed(ARITH_PLUS, PS_SHORT);break;
@@ -171,9 +184,13 @@ static void compile_function(struct sexp* f, struct function* ret, ht_atom_t fun
     case S_RETNONE:
       ret->code[codepos++] = build_instr_untyped(FUNC_RETURN_NONE);break;
     case S_CALL:
-      ret->code[codepos++] = build_instr_untyped(FUNC_CALL_NONE);break;
+      ret->code[codepos++] = build_instr_untyped(FUNC_CALL_NONE);
+      ret->code[codepos++] = (instruction)(unsigned_immediate)(instr->elems[0].data.integer);
+      break;
     case S_CALLASSIGN:
-      ret->code[codepos++] = build_instr_untyped(FUNC_CALL);break;
+      ret->code[codepos++] = build_instr_untyped(FUNC_CALL);
+      ret->code[codepos++] = (instruction)(unsigned_immediate)(instr->elems[0].data.integer);
+      break;
 
     default:
       sayf(COMPILE, "Invalid sexp in function - %s", sexp_tag_to_string(instr->tag));
@@ -185,6 +202,11 @@ static void compile_function(struct sexp* f, struct function* ret, ht_atom_t fun
       ret->code = realloc(ret->code, sizeof(instruction) * (ret->codelen *= 2));
     if (ret->nconsts - constpos < 10)
       ret->consts = realloc(ret->consts, sizeof(primitive_val) * (ret->nconsts *= 2));
+    if (ret->nlocs - locpos < 10){
+      ret->nlocs *= 2;
+      ret->locs = realloc(ret->locs, sizeof(struct location) * ret->nlocs);
+      ret->locpos = realloc(ret->locpos, sizeof(int) * ret->nlocs);
+    }
   }
   
   //We add a sentinel instruction at the end of the stream
@@ -193,6 +215,7 @@ static void compile_function(struct sexp* f, struct function* ret, ht_atom_t fun
 
   ret->codelen = codepos;
   ret->nconsts = constpos;
+  ret->nlocs = locpos;
 
   //Now, we make a second pass to fix up the labels
   for (int i=0;i<ret->codelen;i++){
@@ -321,9 +344,20 @@ void function_dump(struct function* f){
     printf(" %d\n", (int)USERDATA_PART(f->consts[i].value,PS_INT));
   }
   printf(" Code:\n");
+  int loc = 0;
   for (int i=0;i<f->codelen;i++){
+    while (loc < f->nlocs && f->locpos[loc] < i)
+      loc++;
+    if (loc < f->nlocs && f->locpos[loc] == i){
+      char locbuf[200];
+      snprintf(locbuf, 200, LOC_FMT, LOC_ARGS(f->locs[loc]));
+      locbuf[199]=0;
+      printf("  %-20s  ", locbuf);
+    }else{
+      printf("  %-20s  ","");
+    }
     opcode op = instr_opcode(f->code[i]);
-    printf("  %04d: ", i);
+    printf("%04d: ", i);
     printf("%s", opcode_names[op]);
     if (instr_type(f->code[i]))
       printf("[%s]", PRIM_ALT_NAME(instr_type(f->code[i])));
