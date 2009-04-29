@@ -41,6 +41,7 @@ int bitset_get(bitset_t b, int bit);
 /* Set a bit. The bit must be >=0 and <capacity */
 void bitset_set(bitset_t b, int bit, int val);
 
+void bitset_clear(bitset_t b);
 
 
 #endif

@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include "bitops.h"
 #include "error.h"
 
@@ -55,4 +56,7 @@ void bitset_set(bitset_t b, int bit, int val) {
 	} else {
 		*(b->data + n_arr) = *(b->data + n_arr) & (~bitmask);
 	}	
+}
+void bitset_clear(bitset_t b){
+  memset(b->data, 0, ((capacity / NBITS_INT) + 1) * NBITS_INT / NBITS_BYTE);
 }
