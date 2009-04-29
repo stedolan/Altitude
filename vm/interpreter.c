@@ -57,6 +57,7 @@ REPTYPE(PS_INT) run(struct program* prog){
 
 #define TRY(x) do{if(!(x))goto abnormal_quit;}while(0)
 
+#ifndef ALTITUDE_OPTIMISED
 #define NEEDS_STACK(n)						\
   do{								\
     if (stacktop < (n)){                                        \
@@ -98,7 +99,12 @@ REPTYPE(PS_INT) run(struct program* prog){
       stack[stacktop-1].valid = 0;			\
     }							\
   }while(0)
-
+#else
+#define NEEDS_STACK(x) 
+#define HAS_TYPES_2(t1,t2,r)
+#define HAS_TYPE(t,r)
+#define REQUIRES_POINTER
+#endif
 
 #define BINOP(type1, type2, op, result)                         \
   HAS_TYPES_2(type1, type2, result);                            \
