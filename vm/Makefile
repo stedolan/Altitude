@@ -47,9 +47,13 @@ memtypes.o: memtypes.c memtypes.h
 	$(OBJCOMP) memtypes.c
 
 interpreter.o: interpreter.c interpreter.h
+	$(OBJCOMP) interpreter.c
 
-altitude: main.o error.o sexp.o hashtable.o bitops.o atom.o bytecode.o memtypes.o
-	gcc main.o error.o sexp.o hashtable.o bitops.o atom.o bytecode.o memtypes.o -o altitude
+callstack.o: callstack.c callstack.h
+	$(OBJCOMP) callstack.c
+
+altitude: main.o error.o sexp.o hashtable.o bitops.o atom.o bytecode.o memtypes.o interpreter.o callstack.o
+	gcc main.o error.o sexp.o hashtable.o bitops.o atom.o bytecode.o memtypes.o interpreter.o callstack.o -o altitude
 
 clean:
 	rm *.o

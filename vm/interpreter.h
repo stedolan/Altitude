@@ -20,7 +20,7 @@ struct vm_state{
 };
 
 
-void run(struct program* prog);
+REPTYPE(PS_INT) run(struct program* prog);
 
 struct location current_location();//for debugging purposes
 

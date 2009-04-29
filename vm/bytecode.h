@@ -31,6 +31,8 @@
  */
 
 typedef uint16_t instruction;
+typedef int16_t signed_immediate;
+typedef uint16_t unsigned_immediate;
 
 struct var_decl{
   atom name;

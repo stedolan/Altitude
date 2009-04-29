@@ -21,11 +21,18 @@ int sum(int x )
 #line 16
   i = 0;
 #line 16
-  while (i < x) {
+  while (1) {
+#line 16
+    if (i < x) {
+
+    } else {
+#line 16
+      break;
+    }
 #line 17
     s.obj.thisval += i;
 #line 16
-    i ++;
+    i += 1;
   }
 #line 19
   return (s.obj.thisval);

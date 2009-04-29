@@ -277,7 +277,6 @@ static void fill_in_location(struct sexp* s){
 
 struct sexp* sexp_parse(char* s){
   struct sexp* ret = p_sexp(&s);
-  say(SEXP, "parsed sexp");
   if (!ret){
     printf("Invalid sexp\n");
     return NULL;

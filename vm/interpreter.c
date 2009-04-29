@@ -1,7 +1,7 @@
 #include "interpreter.h"
 
 
-int32_t run(struct program* prog){
+REPTYPE(PS_INT) run(struct program* prog){
   struct vm_state vm;
   vm.program = prog;
   vm.frame = stackframe_new(NULL, prog->main_function);
@@ -43,7 +43,7 @@ int32_t run(struct program* prog){
 
 #define HAS_TYPE(type1, result)			                \
   do{								\
-    if (stack[stacktop-1].type != type1{			\
+    if (stack[stacktop-1].type != type1){			\
       say(STACKTYPE, "Bad type in stack operation");		\
       stack[stacktop-1].valid = 0;				\
     }else{							\
@@ -62,15 +62,19 @@ int32_t run(struct program* prog){
   }while(0)
 
 
-#define BINOP(type1, type2, op, result)				\
-  HAS_TYPES_2(type1, type2, result);				\
-  stack[stacktop-2] = stack[stacktop-2] op stack[stacktop-1];	\
-  stacktop--;							\
+#define BINOP(type1, type2, op, result)                         \
+  HAS_TYPES_2(type1, type2, result);                            \
+  USERDATA_PART(stack[stacktop-2].value,result) =               \
+    USERDATA_PART(stack[stacktop-2].value,type1)                \
+           op                                                   \
+    USERDATA_PART(stack[stacktop-1].value,type2);               \
+  stacktop--;                                                   \
   break;
   
 #define UNOP(type1, op, result)				        \
   HAS_TYPE(type1, result);				        \
-  stack[stacktop-1] = op stack[stacktop-1];	                \
+  USERDATA_PART(stack[stacktop-1].value,result)                 \
+    = op USERDATA_PART(stack[stacktop-1].value,type1);          \
   stacktop--;							\
   break;  
 
@@ -192,25 +196,28 @@ int32_t run(struct program* prog){
       break;
 
     case PTR_DEREF: NEEDS_STACK(1); REQUIRES_POINTER;
-      stack[stacktop-1] = pointer_deref(stack[stacktop-1]);
+      stack[stacktop-1] = pointer_deref(USERDATA_PART(stack[stacktop-1].value, PT_PTR));
       break;
     case PTR_ASSIGN: NEEDS_STACK(2);
       stacktop--;
       REQUIRES_POINTER;
       stacktop++;
-      pointer_assign(stack[stacktop-2].ptr, stack[stacktop-1]);
+      pointer_assign(USERDATA_PART(stack[stacktop-2].value,PT_PTR), stack[stacktop-1]);
       stacktop-=2;
       break;
 
     /* FIXME: are indices really ints?? */
     case PTR_INDEX: NEEDS_STACK(2); HAS_TYPES_2(PS_INT, PT_PTR, PT_PTR);
-      stack[stacktop-2] = pointer_index(stack[stacktop-2], stack[stacktop-1]);
+      USERDATA_PART(stack[stacktop-2].value,PT_PTR) 
+        = pointer_index(USERDATA_PART(stack[stacktop-2].value,PT_PTR),
+                        (int)USERDATA_PART(stack[stacktop-1].value,PS_INT));
       stacktop--;
       break;
     case PTR_OFFSET: NEEDS_STACK(1); REQUIRES_POINTER;
       /* takes an immediate, the offset */
       pc++;
-      stack[stacktop-1] = pointer_offset(stack[stacktop-1], (int)*pc);
+      USERDATA_PART(stack[stacktop-1].value,PT_PTR) = 
+        pointer_offset(USERDATA_PART(stack[stacktop-1].value,PT_PTR), (int)*pc);
       break;
     case VAR_LOAD_LOCAL:
       /* takes an immediate, the var */
@@ -222,9 +229,9 @@ int32_t run(struct program* prog){
 	       varidx, vm.frame->func->name->string);
 	  goto abnormal_quit;
 	}
-	stack[stacktop].ptr = 
-	  pointer_to_blob(vm.frame.locals[varidx],
-			  vm.frame.func->vars[varidx].type);
+	USERDATA_PART(stack[stacktop].value,PT_PTR) = 
+	  pointer_to_blob(vm.frame->locals[varidx],
+			  vm.frame->func->vars[varidx].type);
 	stack[stacktop].valid = 1;
 	stack[stacktop].type = PT_PTR;
 	stacktop++;
@@ -239,7 +246,7 @@ int32_t run(struct program* prog){
 	       fidx);
 	  goto abnormal_quit;
 	}
-	stack[stacktop].ptr = pointer_to_function(fidx);
+	USERDATA_PART(stack[stacktop].value,PT_PTR) = pointer_to_function(fidx);
 	stack[stacktop].type = PT_PTR;
         stack[stacktop].valid = 1;
 	stacktop++;
@@ -249,7 +256,7 @@ int32_t run(struct program* prog){
       {
         pc++;
         int cidx = (int)*pc;
-        if (varidx < 0 || varidx >= vm.frame->func->nconsts){
+        if (cidx < 0 || cidx >= vm.frame->func->nconsts){
           sayf(VARACCESS, "const %d is out-of-bounds of function %s",
                cidx, vm.frame->func->name->string);
           goto abnormal_quit;
@@ -263,11 +270,11 @@ int32_t run(struct program* prog){
         int nargs = (int)*pc;
         NEEDS_STACK(nargs + 2);//nargs args, 1 function, 1 retval-ptr
         //FIXME: moar typechecking
-        struct function* func = vm.program->
-          functions[pointer_deref_function(stack[stacktop-2].ptr)];
+        struct function* func = &vm.program->
+          functions[pointer_deref_function(USERDATA_PART(stack[stacktop-2].value,PT_PTR))];
         vm.frame = stackframe_new(vm.frame, func);
         vm.frame->wants_return = 1;
-        vm.frame->return_ptr = stack[stacktop-1].value.ptr
+        vm.frame->return_ptr = USERDATA_PART(stack[stacktop-1].value,PT_PTR);
         vm.frame->return_addr = pc;
         stacktop -= 2;
         //copy in args
@@ -282,7 +289,7 @@ int32_t run(struct program* prog){
 
         for (int i=0;i<nargs;i++){
           pointer_assign(pointer_to_blob(vm.frame->locals[nargs-i],
-                                         vm.frame->func->formals[nargs-i]->type),
+                                         vm.frame->func->formals[nargs-i].type),
                          stack[--stacktop]);
         }
 
@@ -293,10 +300,10 @@ int32_t run(struct program* prog){
       {
         pc++;
         int nargs = (int)*pc;
-        NEED_STACK(nargs + 1);
+        NEEDS_STACK(nargs + 1);
         //FIXME: types
-        struct function* func = vm.program->
-          functions[pointer_deref_function(stack[stacktop-1].ptr)];
+        struct function* func = &vm.program->
+          functions[pointer_deref_function(USERDATA_PART(stack[stacktop-1].value,PT_PTR))];
         vm.frame = stackframe_new(vm.frame,func);
         vm.frame->wants_return = 0;
         vm.frame->return_addr = pc;
@@ -312,14 +319,14 @@ int32_t run(struct program* prog){
 
         for (int i=0;i<nargs;i++){
           pointer_assign(pointer_to_blob(vm.frame->locals[nargs-i],
-                                         vm.frame->func->formals[nargs-i]->type),
+                                         vm.frame->func->formals[nargs-i].type),
                          stack[--stacktop]);
         }
 
         pc = vm.frame->func->code;
       }
       break;
-    case FUNC_RETURN: NEED_STACK(1);
+    case FUNC_RETURN: NEEDS_STACK(1);
       {
         if (vm.frame->wants_return){
           pointer_assign(vm.frame->return_ptr, stack[stacktop-1]);
@@ -349,8 +356,9 @@ int32_t run(struct program* prog){
         if (!vm.frame)goto normal_quit;
       }
       break;
-    case GOTO_COND:NEED_STACK(1);
-      if (!stack[--stacktop]){
+    case GOTO_COND:NEEDS_STACK(1);
+      //All logic (boolean &&, etc) in Altitude uses PS_INT
+      if (!USERDATA_PART(stack[--stacktop].value,PS_INT)){
         break;
       }
       //otherwise, fall through to GOTO_ALWAYS logic
@@ -371,7 +379,7 @@ int32_t run(struct program* prog){
   if (!retval.valid){
     say(INSTR, "main returned invalid value");
   }
-  return USERDATA_PART(retval.value, PS_INT)
+  return USERDATA_PART(retval.value, PS_INT);
 
  abnormal_quit:
   say(INSTR, "abnormal quit");

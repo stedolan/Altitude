@@ -324,14 +324,14 @@ void function_dump(struct function* f){
   for (int i=0;i<f->codelen;i++){
     opcode op = instr_opcode(f->code[i]);
     printf("  %04d: ", i);
-    printf("%s%s",
-           opcode_names[op],
-           PRIM_ALT_NAME(instr_type(f->code[i])));
+    printf("%s", opcode_names[op]);
+    if (instr_type(f->code[i]))
+      printf("[%s]", PRIM_ALT_NAME(instr_type(f->code[i])));
     for (int j=0;j<count_immediates(op);j++){
       printf(" %d", (int)f->code[i+1+j]);
     }
     if (op == GOTO_ALWAYS || op == GOTO_COND){
-      printf(" (->%d)", i + (int)f->code[i+1]);
+      printf(" (->%d)", i + (int)(signed_immediate)f->code[i+1]);
     }
     i+=count_immediates(instr_opcode(f->code[i]));
     printf("\n");

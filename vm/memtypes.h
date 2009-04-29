@@ -66,7 +66,7 @@ typedef union {
 
 
 static IGNORABLE const char* __cnames[] = {
-#define prim(name, reptype, id, cname) [name] = #cname,
+#define prim(name, reptype, id, cname) [name] = cname,
 #include "primitives.h"
 #undef prim
 };
@@ -157,6 +157,7 @@ struct blob{
   /* Pointer to the start of the blob */
   /* Has type "void*" for heap allocs */
   userptr_t pointer;
+  usertype_t decltype;
   
 
   uint32_t flags;
@@ -190,6 +191,9 @@ userptr_t pointer_cast(userptr_t, usertype_t newtype);
 /* return what's pointed to by a given pointer. Pointer must point to
    a primitive */
 primitive_val pointer_deref(userptr_t);
+
+/* return what's pointed to by a given function pointer */
+int pointer_deref_function(userptr_t);
 
 /* put something in the space pointed to by a given pointer. Must be a
    primitive, and pointer must point to a primitive */
