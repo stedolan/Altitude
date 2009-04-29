@@ -36,7 +36,7 @@ typedef uint64_t userptr_t;
 
 typedef union {
 #define prim(name, reptype, id, cname) \
-  reptype __prim_##name[sizeof(reptype)/sizeof(uint64_t)];
+  reptype __prim_##name[sizeof(uint64_t)/sizeof(reptype)];
 #include "primitives.h"
 #undef prim
 } userdata;
@@ -57,17 +57,25 @@ typedef union {
 //     USERDATA_PART(u2,PS_INT) = x;
 #define REPTYPE(p) __reptype_##p
 
-static const char* __cnames[] = {
+//To stop GCC warning about files not using these:
+#ifdef __GNUC__
+#define IGNORABLE __attribute__((unused))
+#else
+#define IGNORABLE
+#endif
+
+
+static IGNORABLE const char* __cnames[] = {
 #define prim(name, reptype, id, cname) [name] = #cname,
 #include "primitives.h"
 #undef prim
 };
-static const char* __pnames[] = {
+static IGNORABLE const char* __pnames[] = {
 #define prim(name, reptype, id, cname) [name] = #name,
 #include "primitives.h"
 #undef prim
 };
-static const char* __usersz_##name = {
+static IGNORABLE const int __usersz[] = {
 #define prim(name, reptype, id, cname) [name] = \
   sizeof(reptype)/sizeof(REPTYPE(PS_CHAR)),
 #include "primitives.h"
@@ -77,8 +85,8 @@ static const char* __usersz_##name = {
 //The name of a primitive type (as a string)
 //in either C (e.g. "signed int") or Altitude
 //(e.g. "PS_INT")
-#define PRIM_C_NAME(p) __cname[p]
-#define PRIM_ALT_NAME(p) __pname[p]
+#define PRIM_C_NAME(p) __cnames[p]
+#define PRIM_ALT_NAME(p) __pnames[p]
 //The size of a primitive type, as visible to a user
 #define PRIM_USERSIZE(p) __usersz[p]
 

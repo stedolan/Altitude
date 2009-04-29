@@ -184,7 +184,7 @@ static void compile_function(struct sexp* f, struct function* ret, ht_atom_t fun
     if (ret->codelen - codepos < 10)
       ret->code = realloc(ret->code, sizeof(instruction) * (ret->codelen *= 2));
     if (ret->nconsts - constpos < 10)
-      ret->constpos = realloc(ret->consts, sizeof(primitive_val) * (ret->nconsts *= 2));
+      ret->consts = realloc(ret->consts, sizeof(primitive_val) * (ret->nconsts *= 2));
   }
   
   //We add a sentinel instruction at the end of the stream
@@ -314,9 +314,11 @@ void function_dump(struct function* f){
   var_decl_dump(f->nlocals, f->locals);
   printf(" Constants:\n");
   for (int i=0;i<f->nconsts;i++){
-    printf("  %d%s: %d", i, PRIM_ALT_NAME(f->consts[i].type));
+    printf("  %d: %s = ", 
+           i, 
+           PRIM_C_NAME(f->consts[i].type));
     //FIXME: rest of primitive types go here
-    printf(" %d\n", (int)USERDATA_PART(f->consts[i],PS_INT));
+    printf(" %d\n", (int)USERDATA_PART(f->consts[i].value,PS_INT));
   }
   printf(" Code:\n");
   for (int i=0;i<f->codelen;i++){

@@ -23,10 +23,10 @@ typedef struct __atom{
 } *atom;
 
 //Get a zero-terminated string
-atom atom_get(char* string);
+atom atom_get(const char* string);
 //Get a string with explicit length
 //Needed for strings with NULLs in them
-atom atom_get_len(char* string, int len);
+atom atom_get_len(const char* string, int len);
 atom atom_addref(atom);
 void atom_decref(atom);
 #endif

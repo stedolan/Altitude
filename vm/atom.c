@@ -62,7 +62,7 @@ static void table_rehash(){
   }
 }
 
-static uint32_t hash_string(char* str, int len){
+static uint32_t hash_string(const char* str, int len){
   //32-bit FNV hash
   const uint32_t fnvprime = 16777619;
   uint32_t hashcode = 2166136261;
@@ -73,10 +73,10 @@ static uint32_t hash_string(char* str, int len){
   return hashcode;
 }
 
-atom atom_get(char* string){
+atom atom_get(const char* string){
   return atom_get_len(string, strlen(string)+1);
 }
-atom atom_get_len(char* string, int len){
+atom atom_get_len(const char* string, int len){
   table_init();
   
   atom a = NULL;

@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include "atom.h"
 #include "memtypes.h"
+#include "sexp.h"
 
 /* Instruction format
  *
@@ -53,7 +54,7 @@ struct function{
   
   /* Constants used in the function */
   int nconsts;
-  struct primitive_val* consts;
+  primitive_val* consts;
   
   /* All function-scope variables (global & local) 
      First few are the formals, rest are the locals
@@ -75,6 +76,8 @@ struct program{
 
   struct function* main_function;
 };
+
+struct program* compile(struct sexp*);
 
 void var_decl_dump(int nvars, struct var_decl*);
 void function_dump(struct function*);
