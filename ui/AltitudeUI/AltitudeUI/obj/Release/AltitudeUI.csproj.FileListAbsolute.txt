@@ -9,3 +9,14 @@ C:\Documents and Settings\Mark King\My Documents\Visual Studio 2008\Projects\Alt
 C:\Documents and Settings\Mark King\My Documents\Visual Studio 2008\Projects\AltitudeUI\AltitudeUI\obj\Release\AltitudeUI.csproj.GenerateResource.Cache
 C:\Documents and Settings\Mark King\My Documents\Visual Studio 2008\Projects\AltitudeUI\AltitudeUI\obj\Release\AltitudeUI.exe
 C:\Documents and Settings\Mark King\My Documents\Visual Studio 2008\Projects\AltitudeUI\AltitudeUI\obj\Release\AltitudeUI.pdb
+E:\mark\altitude\trunk\ui\AltitudeUI\AltitudeUI\obj\Release\AltitudeUI.exe
+E:\mark\altitude\trunk\ui\AltitudeUI\AltitudeUI\obj\Release\AltitudeUI.pdb
+E:\mark\altitude\trunk\ui\AltitudeUI\AltitudeUI\bin\Release\AltitudeUI.exe
+E:\mark\altitude\trunk\ui\AltitudeUI\AltitudeUI\bin\Release\AltitudeUI.pdb
+E:\mark\altitude\trunk\ui\AltitudeUI\AltitudeUI\obj\Release\ResolveAssemblyReference.cache
+E:\mark\altitude\trunk\ui\AltitudeUI\AltitudeUI\obj\Release\AltitudeUI.ConsoleForm.resources
+E:\mark\altitude\trunk\ui\AltitudeUI\AltitudeUI\obj\Release\AltitudeUI.ErrorsForm.resources
+E:\mark\altitude\trunk\ui\AltitudeUI\AltitudeUI\obj\Release\AltitudeUI.MainForm.resources
+E:\mark\altitude\trunk\ui\AltitudeUI\AltitudeUI\obj\Release\NumberedTextBox.NumberedTextBoxUC.resources
+E:\mark\altitude\trunk\ui\AltitudeUI\AltitudeUI\obj\Release\AltitudeUI.Properties.Resources.resources
+E:\mark\altitude\trunk\ui\AltitudeUI\AltitudeUI\obj\Release\AltitudeUI.csproj.GenerateResource.Cache

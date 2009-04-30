@@ -63,8 +63,8 @@ Errors and warnings are passed from altitude on stderr.
 They take the form:
 [Altitude >> UI]
 
-[errno] filename:lineno: message
--or-
 [errno] message
+
+message may contain a reference in the form @filename:lineno:byteoffset
 
 Altitude will display this on its error console, and if it is a crash-worthy error, the program will alert the user explicitly.

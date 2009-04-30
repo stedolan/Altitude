@@ -169,15 +169,21 @@ namespace AltitudeUI
             try
             {
                 this.altitude_vm.Start();
+                // set up data stream handles
+                this.altitude_vm.OutputDataReceived += new DataReceivedEventHandler(altitude_vm_OutputDataReceived);
+                this.altitude_vm.Exited += new EventHandler(altitude_vm_Exited);
             }
             catch (Win32Exception w32e)
             {
                 MessageBox.Show("Couldn't load the Altitude VM!\n" + w32e.Message, "Fatal Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 this.Close();
             }
+        }
 
-            // set up data stream handles
-            this.altitude_vm.OutputDataReceived += new DataReceivedEventHandler(altitude_vm_OutputDataReceived);
+        void altitude_vm_Exited(object sender, EventArgs e)
+        {
+            // the VM died
+            this.altitude_vm = null;
         }
 
         private void MainForm_Move(object sender, EventArgs e)
