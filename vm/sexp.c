@@ -49,6 +49,8 @@ const char* sexp_names[]={
   [S_INDEX] = "index", 
   [S_OFFSET] = "offset",
 
+  [S_PTR_CAST] = "ptrcast",
+
   [S_LOAD_L] = "load_l",
   [S_LOAD_F] = "load_f",
   [S_LOAD_G] = "load_g",
@@ -179,6 +181,7 @@ static struct sexp_element p_sexp_element(char** pos){
     ret.data.integer = p_int(pos);
   }else{
     //error
+    sayf(SEXP, "Expecting sub-element, got %20s", *pos);
     *pos = NULL;
   }
   return ret;
@@ -221,7 +224,8 @@ static struct sexp* p_sexp(char** pos){
   tagbuf[taglen] = 0;
   int tag = -1;
   for (int i=0;i<NTAGS;i++){
-    if (!strncmp(*pos, sexp_names[i], strlen(sexp_names[i]))){
+    if (strlen(sexp_names[i]) < taglen)continue;
+    if (!strncmp(*pos, sexp_names[i], taglen)){
       tag = i;
       break;
     }
@@ -241,7 +245,7 @@ static struct sexp* p_sexp(char** pos){
   while (*pos && **pos != ')'){//while not error and not end of sexp...
     elems[size++] = p_sexp_element(pos);
     if (!*pos){
-      say(SEXP, "error parsing sub-element");
+      sayf(SEXP, "error parsing sub-element in sexp %s",sexp_tag_to_string(tag));
       free(elems);
       free(ret);
       return NULL;

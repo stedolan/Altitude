@@ -59,6 +59,8 @@ typedef enum {
   S_NEGATE_INT,
   S_LT_INT, S_GT_INT,
 
+  S_PTR_CAST,
+
   S_DEREF, S_ASSIGN, S_INDEX, S_OFFSET, 
 
   S_LOAD_L, S_LOAD_F, S_LOAD_G, S_CONSTANT_INT,
