@@ -162,7 +162,10 @@ namespace AltitudeUI
 
             // call altitude with this file
             this.altitude_vm = new Process();
-            this.altitude_vm.StartInfo.FileName = "../../../../../vm/altitude"; // the altitude binary
+            string binary_loc = "../../../../../vm/altitude";
+            this.altitude_vm.StartInfo.FileName = binary_loc; // the altitude binary
+            this.consoleform.AppendStdOut("opening vm binary:");
+            this.consoleform.AppendStdOut(binary_loc + " " + this.currLoaded);
             this.altitude_vm.StartInfo.Arguments = this.currLoaded; // the c file
             this.altitude_vm.StartInfo.UseShellExecute = true; // the rest of this can be ignored really
             // start altitude!
