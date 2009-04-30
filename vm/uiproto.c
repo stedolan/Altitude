@@ -3,6 +3,7 @@
 #include "error.h"
 #include "stdio.h"
 #include "stdlib.h"
+#include "control.h"
 
 char ui_proto_command_buf[1024]; //scratch space for command data
 struct location ui_last_location; //anytime a location is parsed, it goes in here
@@ -25,7 +26,7 @@ void get_command(){
   }
 }
 
-void parse_command(){
+int parse_command(){
 	if(get_atom("run") == get_atom(ui_proto_command_buf)) {
 		altitude_run();
 	} else if(get_atom("runback") == get_atom(ui_proto_command_buf)) {
@@ -38,7 +39,11 @@ void parse_command(){
 		breakpoint_set(&ui_last_location);
 	}else if(get_atom("unset") == get_atom(ui_proto_command_buf)){
 		breakpoint_unset(&ui_last_location);
-	}else{
+	}else if(get_atom("quit") == get_atom(ui_proto_command_buf)){
+	        return 1;
+	}
+	else{
 		sayf(E_BADCOMMAND, "Unrecognised command: %s", &ui_proto_command_buf);
 	}
+	return 0
 }

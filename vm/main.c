@@ -5,7 +5,7 @@
 #include "sexp.h"
 #include "bytecode.h"
 #include "interpreter.h"
-
+#include "uiproto.h"
 #define MAXFILE (1024*1024)
 
 int main(int argc, char** argv){
@@ -35,10 +35,12 @@ int main(int argc, char** argv){
     fprintf(stderr, "Couldn't compile\n");
     exit(1);
   }
-  if (!strcmp(argv[1], "run")){
-    run(program);
-  }else if (!strcmp(argv[1],"dump")){
-    program_dump(program);
+
+  while(1){
+    get_command();
+    if(parse_command()){
+      break;
+    }
   }
   return 0;
 }

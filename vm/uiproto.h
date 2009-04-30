@@ -3,6 +3,6 @@
 #include "error.h"
 
 void get_command();
-void parse_command();
+int parse_command();
 
 #endif

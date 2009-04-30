@@ -2,7 +2,13 @@
 #include "control.h"
 #endif
 
-void altitude_run(){
+#include "interpreter.h" //for run()
+void altitude_run(struct program* p){
+  run(p);
+}
+
+void altitude_dump(struct program* p){
+  dump(p);
 }
 
 void altitude_runback(){
