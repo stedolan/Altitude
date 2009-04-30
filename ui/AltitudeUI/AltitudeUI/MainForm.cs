@@ -167,6 +167,7 @@ namespace AltitudeUI
             this.consoleform.AppendStdOut("opening vm binary:");
             this.consoleform.AppendStdOut(binary_loc + " " + this.currLoaded);
             this.altitude_vm.StartInfo.Arguments = this.currLoaded; // the c file
+            this.altitude_vm.StartInfo.UseShellExecute = false;
             this.altitude_vm.StartInfo.RedirectStandardInput = true;
             this.altitude_vm.StartInfo.RedirectStandardOutput = true;
             // start altitude!
