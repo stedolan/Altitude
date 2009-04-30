@@ -54,7 +54,7 @@
             this.ToolStripProgressBar = new System.Windows.Forms.ToolStripProgressBar();
             this.ToolStripStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
-            this.CodeEditorBox = new AltitudeUI.CodeEditorBox();
+            this.CodeEditorBox = new NumberedTextBox.NumberedTextBoxUC();
             this.menuStrip1.SuspendLayout();
             this.MainToolStrip.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -218,6 +218,7 @@
             this.toolStripButton3.Name = "toolStripButton3";
             this.toolStripButton3.Size = new System.Drawing.Size(97, 22);
             this.toolStripButton3.Text = "Set Breakpoint";
+            this.toolStripButton3.Click += new System.EventHandler(this.toolStripButton3_Click);
             // 
             // toolStripButton4
             // 
@@ -226,6 +227,7 @@
             this.toolStripButton4.Name = "toolStripButton4";
             this.toolStripButton4.Size = new System.Drawing.Size(120, 22);
             this.toolStripButton4.Text = "Remove Breakpoint";
+            this.toolStripButton4.Click += new System.EventHandler(this.toolStripButton4_Click);
             // 
             // toolStripButton5
             // 
@@ -289,6 +291,7 @@
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "Altitude";
             this.Move += new System.EventHandler(this.MainForm_Move);
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
             this.MainToolStrip.ResumeLayout(false);
@@ -325,9 +328,9 @@
         private System.Windows.Forms.StatusStrip statusStrip1;
         private System.Windows.Forms.ToolStripProgressBar ToolStripProgressBar;
         private System.Windows.Forms.ToolStripStatusLabel ToolStripStatusLabel;
-        private CodeEditorBox CodeEditorBox;
         private System.Windows.Forms.ToolStripButton toolStripButton5;
         private System.Windows.Forms.OpenFileDialog openFileDialog;
+        private NumberedTextBox.NumberedTextBoxUC CodeEditorBox;
     }
 }
 
