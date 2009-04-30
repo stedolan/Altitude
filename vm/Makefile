@@ -55,8 +55,14 @@ callstack.o: callstack.c callstack.h
 user_stdlib.o: user_stdlib.c user_stdlib.h
 	$(OBJCOMP) user_stdlib.c
 
-altitude_bin: main.o error.o sexp.o hashtable.o bitops.o atom.o bytecode.o memtypes.o interpreter.o callstack.o user_stdlib.o
-	gcc main.o error.o sexp.o hashtable.o bitops.o atom.o bytecode.o memtypes.o interpreter.o callstack.o user_stdlib.o -o altitude_bin
+uiproto.o: uiproto.h uiproto.c
+	$(OBJCOMP) uiproto.c
+
+control.o: control.h control.c
+	$(OBJCOMP) control.c
+
+altitude_bin: main.o error.o sexp.o hashtable.o bitops.o atom.o bytecode.o memtypes.o interpreter.o callstack.o user_stdlib.o uiproto.o control.o
+	gcc main.o error.o sexp.o hashtable.o bitops.o atom.o bytecode.o memtypes.o interpreter.o callstack.o user_stdlib.o uiproto.o control.o -o altitude_bin
 
 clean:
 	rm *.o

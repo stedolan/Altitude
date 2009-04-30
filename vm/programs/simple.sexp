@@ -1,29 +1,29 @@
 (program 
-(@"testorig.c":33554430:250 struct "struct astruct" (fields (field (type (int)) "thisval")))
-(@"testorig.c":33554434:285 struct "struct somestruct" (fields (field (type (int))
+(@"testorig.c":33554430:184 struct "struct astruct" (fields (field (type (int)) "thisval")))
+(@"testorig.c":33554434:219 struct "struct somestruct" (fields (field (type (int))
                                                                       "val")
                                                                (field (type (comptype
                                                                             "struct astruct"))
                                                                       "obj")))
-(@"testorig.c":33554439:341 function "sum"
-                                     (formals (@"testorig.c":33554439:341 var (type
+(@"testorig.c":33554439:275 function "sum"
+                                     (formals (@"testorig.c":33554439:275 var (type
                                                                               (int))
                                                                               "x"))
-                                     (locals (@"testorig.c":33554439:341 var (type
+                                     (locals (@"testorig.c":33554439:275 var (type
                                                                              (comptype
                                                                              "struct somestruct"))
                                                                              "s")
-                                             (@"testorig.c":33554439:341 var (type
+                                             (@"testorig.c":33554439:275 var (type
                                                                              (int))
                                                                              "i"))
                                      (body (load_l "s")
                                            (offset "struct somestruct" "obj")
                                            (offset "struct astruct" "thisval")
                                            (constant.int 0)
-                                           (@"testorig.c":33554441:382 assign)
+                                           (@"testorig.c":33554441:316 assign)
                                            (load_l "i")
                                            (constant.int 0)
-                                           (@"testorig.c":33554442:408 assign)
+                                           (@"testorig.c":33554442:342 assign)
                                            (label "$LOOPSTART$ALT$0")
                                            (load_l "i")
                                            (deref)
@@ -31,7 +31,7 @@
                                            (deref)
                                            (lt.int)
                                            (condgoto (label "$ALT$2"))
-                                           (@"testorig.c":33554442:403 goto (label
+                                           (@"testorig.c":33554442:337 goto (label
                                                                             "$LOOPEND$ALT$1"))
                                            (goto (label "$ALT$3"))
                                            (label "$ALT$2")
@@ -47,32 +47,32 @@
                                            (load_l "i")
                                            (deref)
                                            (plus.int)
-                                           (@"testorig.c":33554443:430 assign)
+                                           (@"testorig.c":33554443:364 assign)
                                            (load_l "i")
                                            (load_l "i")
                                            (deref)
                                            (constant.int 1)
                                            (plus.int)
-                                           (@"testorig.c":33554442:408 assign)
+                                           (@"testorig.c":33554442:342 assign)
                                            (goto (label "$LOOPSTART$ALT$0"))
                                            (label "$LOOPEND$ALT$1")
                                            (load_l "s")
                                            (offset "struct somestruct" "obj")
                                            (offset "struct astruct" "thisval")
                                            (deref)
-                                           (@"testorig.c":33554445:456 return)))
-(@"testorig.c":33554448:481 function "main"
+                                           (@"testorig.c":33554445:390 return)))
+(@"testorig.c":33554448:415 function "main"
                                      (formals)
-                                     (locals (@"testorig.c":33554448:481 var (type
+                                     (locals (@"testorig.c":33554448:415 var (type
                                                                              (int))
                                                                              "tmp"))
                                      (body (load_l "tmp")
                                            (constant.int 40)
                                            (load_f "sum")
                                            (deref)
-                                           (@"testorig.c":33554449:495 callassign
+                                           (@"testorig.c":33554449:429 callassign
                                            1)
                                            (load_l "tmp")
                                            (deref)
-                                           (@"testorig.c":33554449:495 return)))
+                                           (@"testorig.c":33554449:429 return)))
 )

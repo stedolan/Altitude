@@ -3,6 +3,7 @@
 #include "error.h"
 #include "stdio.h"
 #include "stdlib.h"
+#include "string.h"
 #include "control.h"
 
 char ui_proto_command_buf[1024]; //scratch space for command data
@@ -26,24 +27,26 @@ void get_command(){
   }
 }
 
-int parse_command(){
-	if(get_atom("run") == get_atom(ui_proto_command_buf)) {
-		altitude_run();
-	} else if(get_atom("runback") == get_atom(ui_proto_command_buf)) {
+int parse_command(struct program* current){
+	if(atom_get("run") == atom_get(ui_proto_command_buf)) {
+		altitude_run(current);
+	}else if(atom_get("dump") == atom_get(ui_proto_command_buf)) {
+		altitude_dump(current);
+	}else if(atom_get("runback") == atom_get(ui_proto_command_buf)) {
 		altitude_runback();
-	}else if(get_atom("restart") == get_atom(ui_proto_command_buf)){
+	}else if(atom_get("restart") == atom_get(ui_proto_command_buf)){
 		altitude_restart();
-	}else if(get_atom("view") == get_atom(ui_proto_command_buf)){
+	}else if(atom_get("view") == atom_get(ui_proto_command_buf)){
 		altitude_view();
-	}else if(get_atom("set") == get_atom(ui_proto_command_buf)){
+	}else if(atom_get("set") == atom_get(ui_proto_command_buf)){
 		breakpoint_set(&ui_last_location);
-	}else if(get_atom("unset") == get_atom(ui_proto_command_buf)){
+	}else if(atom_get("unset") == atom_get(ui_proto_command_buf)){
 		breakpoint_unset(&ui_last_location);
-	}else if(get_atom("quit") == get_atom(ui_proto_command_buf)){
+	}else if(atom_get("quit") == atom_get(ui_proto_command_buf)){
 	        return 1;
 	}
 	else{
-		sayf(E_BADCOMMAND, "Unrecognised command: %s", &ui_proto_command_buf);
+		sayf(BADCOMMAND, "Unrecognised command: %s", &ui_proto_command_buf);
 	}
-	return 0
+	return 0;
 }

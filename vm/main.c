@@ -38,7 +38,7 @@ int main(int argc, char** argv){
 
   while(1){
     get_command();
-    if(parse_command()){
+    if(parse_command(program)){
       break;
     }
   }
