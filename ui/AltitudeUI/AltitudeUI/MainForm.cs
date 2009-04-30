@@ -184,6 +184,7 @@ namespace AltitudeUI
         {
             // the VM died
             this.altitude_vm = null;
+            this.consoleform.AppendStdOut("VM exited");
         }
 
         private void MainForm_Move(object sender, EventArgs e)
