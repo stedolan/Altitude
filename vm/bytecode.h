@@ -90,6 +90,7 @@ void var_decl_dump(int nvars, struct var_decl*);
 void function_dump(struct function*);
 void program_dump(struct program*);
 
+
 typedef enum{
   /* this is a hack to make sure 0 is not a valid opcode */
   /* bugs have caused the VM to try and execute silly things 
@@ -99,6 +100,8 @@ typedef enum{
 #include "opcodes.h"
 #undef op
 } opcode;
+
+const char* opcode_name(opcode c);
 
 
 

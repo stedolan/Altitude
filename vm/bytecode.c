@@ -138,6 +138,16 @@ static void compile_function(struct sexp* f, struct function* ret, ht_atom_t fun
       break;
     
 
+    case S_PTR_CAST:
+      {
+        struct sexp* to = instr->elems[0].data.sexp;
+        usertype_t totype = type_from_sexp(to);
+        ret->code[codepos++] = build_instr_untyped(PTR_CAST);
+        ret->code[codepos++] = (unsigned_immediate)((totype>>16) & 0xffff);
+        ret->code[codepos++] = (unsigned_immediate)(totype & 0xffff);
+      }
+      break;
+
 
     //more interesting ones
       
@@ -346,13 +356,15 @@ void var_decl_dump(int nvars, struct var_decl* d){
   }
 }
 
-
-void function_dump(struct function* f){
-  static const char* opcode_names[] = {
+static const char* opcode_names[] = {
 #define op(name, imm, in, out) [name] = #name,
 #include "opcodes.h"
 #undef op
-  };
+};
+const char* opcode_name(opcode c){return opcode_names[c];}
+
+
+void function_dump(struct function* f){
   printf("Function <%s>:\n", f->name->string);
   printf(" Arguments:\n");
   var_decl_dump(f->nformals, f->formals);

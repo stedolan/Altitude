@@ -132,12 +132,20 @@ and psExp (e: exp) : doc =
       psExp (e1) ++ line ++ psExp (e2) ++ line ++
 	pSexp (match (op, typ) with
 	  (PlusA, intType) -> "plus.int"
+        | (MinusA, intType) -> "minus.int"
+        | (Mult, intType) -> "times.int"
+        | (Div, intType) -> "div.int"
+        | (Mod, intType) -> "mod.int"
 	| (Lt, intType) -> "lt.int"
-	| _ -> E.s (unimp ("Unsupported binary operation"))
+        | (Gt, intType) -> "gt.int"
+        | (PlusPI, _) -> "index"
+        | (IndexPI, _) -> "index"
+	| (op,t) -> E.s (unimp "Unsupported binary operation %s" (Pretty.sprint 100 (d_binop () op ++ text " on " ++ d_plaintype () t)))
 	      ) []
   | CastE (typ, e1) -> 
-      psExp (e1) ++ pSexp (match typ, (typeOf e1) with
-	_ -> E.s (unimp "Unsupported cast")) []
+      psExp (e1) ++ line ++ (match typ, (typeOf e1) with
+        (TPtr (t1, _), TPtr (t2, _)) -> pSexp "ptrcast" [psType typ; psType (typeOf e1)]
+      |	(t1,t2) -> E.s (unimp "Unsupported cast - %s" (Pretty.sprint 100 ( d_plainexp () e1 ++ line ++ pType None () t1 ++ text "->" ++ pType None () t2))))
 
   | SizeOf (t) -> E.s (unimp "sizeof")
   | SizeOfE (e) -> E.s (unimp "sizeof")

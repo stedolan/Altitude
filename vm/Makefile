@@ -5,7 +5,7 @@ OBJCOMP = $(CC) -c $(CFLAGS)
 
 .PHONY: all tests clean
 
-all: altitude tests
+all: altitude_bin tests
 
 atom.o: atom.c atom.h
 	$(OBJCOMP) atom.c
@@ -55,8 +55,8 @@ callstack.o: callstack.c callstack.h
 user_stdlib.o: user_stdlib.c user_stdlib.h
 	$(OBJCOMP) user_stdlib.c
 
-altitude: main.o error.o sexp.o hashtable.o bitops.o atom.o bytecode.o memtypes.o interpreter.o callstack.o user_stdlib.o
-	gcc main.o error.o sexp.o hashtable.o bitops.o atom.o bytecode.o memtypes.o interpreter.o callstack.o user_stdlib.o -o altitude
+altitude_bin: main.o error.o sexp.o hashtable.o bitops.o atom.o bytecode.o memtypes.o interpreter.o callstack.o user_stdlib.o
+	gcc main.o error.o sexp.o hashtable.o bitops.o atom.o bytecode.o memtypes.o interpreter.o callstack.o user_stdlib.o -o altitude_bin
 
 clean:
 	rm *.o

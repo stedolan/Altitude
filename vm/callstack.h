@@ -10,6 +10,9 @@ struct stackframe{
   struct blob** locals;
   
   struct stackframe* parent;
+  int parent_inv_idx;
+
+
   int wants_return;
   userptr_t return_ptr; //where to store the return value
 
@@ -21,5 +24,7 @@ struct stackframe{
 };
 
 struct stackframe* stackframe_new(struct stackframe* caller, struct function* callee);
+
+void stackframe_free(struct stackframe* frame);
 
 #endif

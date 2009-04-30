@@ -1,5 +1,20 @@
 \chapter{Compiler}
 \section{CIL}
+To perform the work of parsing and typechecking, we are using the CIL (C Intermediate Language) library, from Berkeley University. It parses C source and does some transformation to reduce the set of constructs down to a manageable amount, by introduction temporary variables, etc.
+
+For instance, after CIL transforms the source, each assignment has as its right-hand-side either a single function call, or a side-effect-free expression. Complex expressions such as {\tt a = f() + g()} are transformed down to this form by the introduction of temporaries.
+
 \subsection{Merging and Linking}
+
+One task of a C implementation is to link different parts of a program by resolving external symbols. For instance, suppose a function is declared (given a prototype) in several files (usually by means of a header file), and defined once. All calls to the function must run the same code wherever it's defined, and all pointers to that function must compare equal.
+
+This can be done internally by CIL, which calls it ``merging'', and was written to facilitate whole-program analysis by CIL's authors.
+
+\subsection{Preprocessing}
+Before C code is run, it must be preprocessed. This is a task we're not going to address. Running C on Altitude will require an external preprocessor. This isn't a big deal, many standalone preprocessors exist. For now, we shall use the GNU preprocessor as packaged with GCC.
+
 \section{S-Expression Intermediate Representation}
+
+CIL is written in OCaml. To pass the CIL representation of the program to C, there is an OCaml module to dump the CIL in an s-expression based tree format.
+
 \section{S-Expression Parsing and Compilation}

@@ -97,6 +97,8 @@ typedef enum{
 
   E_BAD_SYSCALL_ARGS, //bad arguments to a system call
 
+  E_DBG,
+
   /* 300-399
      UI related "errors" - events to notify the UI about which aren't exactly
      faults, such as hitting a breakpoint (many more could be added here) */
@@ -106,7 +108,8 @@ typedef enum{
   E_PROGRAM_START,
   E_PROGRAM_END_OK,
   E_PROGRAM_END_CRASH,
-  
+  E_USER_OUTPUT,
+  E_TRACE,
   
 } message_category;
 

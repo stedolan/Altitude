@@ -10,6 +10,7 @@ struct stackframe* stackframe_new(struct stackframe* caller, struct function* ca
 
   frame->func = callee;
   frame->parent = caller;
+  frame->parent_inv_idx = 0;
 
   frame->locals = malloc(sizeof(struct blob*) * (callee->nformals + callee->nlocals));
   int local_idx = 0;
@@ -26,6 +27,7 @@ struct stackframe* stackframe_new(struct stackframe* caller, struct function* ca
   
   if (caller){
     //if this is not "int main()"
+    frame->parent_inv_idx = caller->invoked_pos;
     caller->invoked[caller->invoked_pos++] = frame;
     if (caller->invoked_pos >= caller->invoked_cap){
       caller->invoked_cap *= 2;
@@ -33,4 +35,9 @@ struct stackframe* stackframe_new(struct stackframe* caller, struct function* ca
     }
   }
   return frame;
+}
+
+
+void stackframe_free(struct stackframe* f){
+  
 }

@@ -35,9 +35,26 @@ int sys_malloc(int wantreturn, userptr_t retval,
     return pointer_assign(retval, newmem);
   }
 }
+int sys_putint(int wantreturn, userptr_t retval,
+               int nargs, primitive_val* args){
+  if (wantreturn){
+    say(BAD_SYSCALL_ARGS, "putint does not return a value");
+    return 0;
+  }
+  if (nargs != 1 || args[0].type != PS_INT){
+    say(BAD_SYSCALL_ARGS, "putint passed bad args");
+    return 0;
+  }
+  if (!args[0].valid){
+    say(DUBIOUS_SYSCALL_INVOCATION, "puting passed possibly undefined value");
+    return 0;
+  }
+  sayf(USER_OUTPUT, "User output: %d", USERDATA_PART(args[0].value, PS_INT));
+  return 1;
+}
 
 
 
 const int user_stdlib_count = 1;
-const char* user_stdlib_names[] = {"__altitude_malloc"};
-const system_function user_stdlib_funcs[] = {sys_malloc};
+const char* user_stdlib_names[] = {"__altitude_malloc", "__altitude_putint"};
+const system_function user_stdlib_funcs[] = {sys_malloc,sys_putint};

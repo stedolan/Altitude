@@ -5,12 +5,14 @@
 static struct vm_state vm;
 
 struct location current_location(){
+  if (!vm.frame)return unknown_location();
   struct location loc;
   loc.function = vm.frame->func;
   
   //binary search for current location
   int pc = vm.pc - loc.function->code;
-  assert(pc >= 0 && pc < loc.function->codelen);
+  if (!(pc >= 0 && pc < loc.function->codelen))
+    return unknown_location(); //message during function call
   int* positions = loc.function->locpos;
   struct location* locs = loc.function->locs;
 
@@ -126,6 +128,7 @@ REPTYPE(PS_INT) run(struct program* prog){
   say(PROGRAM_START, "Program starting");
   //FIXME: arithmetic error checking (overflow and such)
   while (1){
+    sayf(TRACE, "Executing %s", opcode_name(instr_opcode(*vm.pc)));
     switch(instr_opcode(*vm.pc)){
     case ARITH_PLUS: NEEDS_STACK(2);
       switch (instr_type(*vm.pc)){
@@ -264,6 +267,19 @@ REPTYPE(PS_INT) run(struct program* prog){
       vm.pc++;
       TRY(pointer_offset(&USERDATA_PART(stack[stacktop-1].value,PT_PTR), 
                          USERDATA_PART(stack[stacktop-1].value,PT_PTR), (int)*vm.pc));
+      break;
+    case PTR_CAST: NEEDS_STACK(1); REQUIRES_POINTER;
+      {
+        usertype_t type = 0;
+        vm.pc++;
+        type |= (unsigned_immediate)*vm.pc;
+        type <<= 16;
+        vm.pc++;
+        type |= (unsigned_immediate)*vm.pc;
+        TRY(pointer_cast(&USERDATA_PART(stack[stacktop-1].value,PT_PTR),
+                         USERDATA_PART(stack[stacktop-1].value,PT_PTR),
+                         type));
+      }
       break;
     case VAR_LOAD_LOCAL:
       /* takes an immediate, the var */
@@ -421,7 +437,9 @@ REPTYPE(PS_INT) run(struct program* prog){
   if (!retval.valid){
     say(INSTR, "main returned invalid value");
   }
-  return USERDATA_PART(retval.value, PS_INT);
+  REPTYPE(PS_INT) mainval =  USERDATA_PART(retval.value, PS_INT);
+  sayf(PROGRAM_END_OK, "Function main returned %d", (int)mainval);
+  return mainval;
 
  abnormal_quit:
   sayf(PROGRAM_END_CRASH, "Program exited abnormally after %llu instructions executed", vm.now);

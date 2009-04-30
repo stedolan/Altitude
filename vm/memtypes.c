@@ -482,6 +482,7 @@ int pointer_index(userptr_t* ret, userptr_t base_ptr, int idx){
   }
   usertype_t top_type = ptr->top_type, ctype = ptr->ctype;
   int path = ptr->path;
+  sayf(DBG, "toptype: [%d]%s", get_ptr_levels(top_type), get_base_type_name(top_type)->string);
   if (top_type){
     //we can only cleanly index a top_type pointer if the index
     //is on path 0 (+/- a multiple of nchildren). This corresponds
@@ -496,12 +497,17 @@ int pointer_index(userptr_t* ret, userptr_t base_ptr, int idx){
       //the programmer is a bad person
 
       //Eventually, when we implement member arrays, this will be valid
-
+      say(PTR_CHANGE, "Trying to index a member-pointer");
       //convert to a ctype pointer and carry on
       ctype = pointer_type(base_ptr);
       path = byte_offset(ptr);
       top_type = 0;
     }
+  }
+  if (ctype && path == 0){
+    say(DBG, "awesome ptr cast");
+    top_type = ctype;
+    ctype = 0;
   }
   if (ctype){
     //An offset is being applied while the pointer has a ctype
@@ -657,18 +663,23 @@ int pointer_deref(primitive_val* ret, userptr_t ptr){
     return 1;
   }else{
     usertype_t t = pointer_type(ptr);
+    sayf(DBG, "deref type: [%d]%s", get_ptr_levels(t), get_base_type_name(t)->string);
     if (is_ptr_type(t)){
       ret->type = PT_PTR;
     }else{
       assert(t && t < N_PRIMITIVE_DATA_TYPES);
       ret->type = (primtype)t;
     }
-    if (p->ctype){
+    sayf(DUBIOUS_READ, "deref - %d", ret->type);
+    if (p->ctype && !p->top_type){
       say(DUBIOUS_READ, "Reading through a pointer not known to be valid");
       return blob_read(p->blob, p->path, ret);
     }else{
       struct pointer fixed = *p;
-      if (try_safe_cast(&fixed, p->top_type)){
+      if (!p->blob->top_type){
+        say(DUBIOUS_READ, "Reading from uninitialised memory");
+        return blob_read(p->blob, byte_offset(p), ret);
+      }else if (try_safe_cast(&fixed, p->blob->top_type)){
         //oh good, this is valid
         return blob_read(p->blob, byte_offset(&fixed), ret);
       }else{
@@ -712,13 +723,18 @@ int pointer_assign(userptr_t ptr, primitive_val val){
     say(INVALID_READ, "Trying to assign to a function");
     return 0;
   }else{
+    sayf(DUBIOUS_WRITE, "writing something! %d", val.type);
     assert(is_ptr_type(pointer_type(ptr)) || pointer_type(ptr) == val.type);
-    if (p->ctype){
+    if (p->ctype && !p->top_type){
       say(DUBIOUS_WRITE, "Writing through a pointer not known to be valid");
       return blob_write(p->blob, p->path, val);
     }else{
       struct pointer fixed = *p;
-      if (try_safe_cast(&fixed, p->top_type)){
+      if (!p->blob->top_type){//FIXME: ctype here???
+        //nothing had ever been written into this memory
+        say(DEBUG, "first write into uninitialised memory");
+        p->blob->top_type = p->top_type;
+      }else if (try_safe_cast(&fixed, p->blob->top_type)){
         //the pointer "fits" into what's actually in memory. Oh good.
       }else{
         //the pointer doesn't fit, invalidate the entire blob

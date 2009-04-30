@@ -1,10 +1,15 @@
-void* __altitude_malloc(int sz);
+void* __altitude_malloc(int);
+#define malloc __altitude_malloc
 
+void __altitude_putint(int);
+#define putint __altitude_putint
 
 int main(){
-  void *p1, *p2, *p3;
-  __altitude_malloc(2);
-  p2 = __altitude_malloc(5);
-  p3 = __altitude_malloc(-1);
-  return 0;
+  int *array;
+  void* memory;
+  malloc(10);
+  memory = malloc(20);
+  array = (int*)memory;
+  array[0] = 15;
+  return array[0];
 }
