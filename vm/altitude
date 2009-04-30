@@ -1,0 +1,21 @@
+#!/bin/sh
+ALT_DIR="$(dirname $0)/.."
+ALT_VM_DIR="${ALT_DIR}/vm"
+ALT_CCOMP="${ALT_CCOMP:-$ALT_DIR/cilcomp/ccomp}"
+ALT_BIN="${ALT_BIN:-$ALT_VM_DIR/altitude_bin}"
+CPP="${CPP:-cpp}"
+
+infile="$1"
+
+file="$(basename "$infile")"
+file="${file%.c}"
+
+outdir="$(dirname "$infile")"
+
+"$CPP" -D__ALTITUDE__ -x c -std=c99 "$infile" > "$outdir/$file.cpp" || exit 1
+if [ ! -z "$ALT_CIL" ]; then
+    "$ALT_CIL" --printCilAsIs --out "$outdir/$file.cil" "$outdir/$file.cpp"
+fi
+"$ALT_CCOMP" "$outdir/$file.cpp" > "$outdir/$file.sexp" || exit 1
+"$ALT_BIN" dump "$outdir/$file.sexp" > "$outdir/$file.asm" || exit 1
+"$ALT_BIN" run "$outdir/$file.sexp"
