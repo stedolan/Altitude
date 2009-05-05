@@ -1,0 +1,31 @@
+\documentclass[10pt,a4paper]{report}
+\usepackage[latin1]{inputenc}
+\begin{document}
+
+\tableofcontents
+
+\chapter{The Project}
+
+\section{Outline}
+\subsection{What it is}
+Altitude is our reversible interpreter for the C programming language. The goal of the project is to build a teaching environment which will provide a safety net for C programmers, consisting of a minimal development environment with extensive debugging support. The various nooks and crannies of C are hard to learn for a novice programmer.
+
+When we say it is reversible, we mean that unlike traditional debuggers, where one starts the program, runs the code forward until a problem is hit, or particular conditions met (breakpoints, for example) then looks at what is wrong, it is possible to run the program backwards until similar conditions are met, and see where things went wrong, and what caused them to do so.
+
+C compilers usually focus on producing the fastest correct code possible and indeed, many programmers chose to use C because of its speed advantage over other languages. This focus on speed combined with the internal architecture of physical computers means that the compiler is limited in what data it can put in an executable. Our debugger is based around a virtual machine that runs C code keeping much more metadata than is usual, since we want to focus on code correctness, not speed. This means we can detect a wide variety of errors which, although they affect C code compiled and run everywhere, a normal compiler cannot prevent and a normal dynamic analysis tool cannot report, only detect.
+
+\subsection{Why is it useful}
+This project aims to prevent a significant amount of bugs derived from a novice's lack of in-depth understanding of how C works. There are many cases where even experienced users are driven to frustration by subtle differences in how code is handled, and nobody should have to know exactly how every compiler their program may ever be run on will handle their code. To this end, our aims are to prevent implementation-specific code from being written, and to provide reasons why any given error is, in fact, an error.
+
+\section{Structure}
+How the parts fit together
+\section{Completion}
+Not all of the stuff that was planned is done.
+
+\section{Future Work}
+Some stuff (planned or othewise) that would be cool to do.
+
+\chapter{Technical Documentation}
+Chunks of the specification should go here; it's mostly documentation anyway.
+
+\end{document}
