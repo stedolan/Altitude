@@ -3,6 +3,21 @@
 \contentsline {subsection}{\numberline {1.1.1}What it is}{2}
 \contentsline {subsection}{\numberline {1.1.2}Why is it useful}{2}
 \contentsline {section}{\numberline {1.2}Structure}{3}
+\contentsline {subsection}{\numberline {1.2.1}Reversible Virtual Machine}{3}
+\contentsline {subsection}{\numberline {1.2.2}Compiler}{3}
+\contentsline {subsection}{\numberline {1.2.3}Assembler/Disassembler}{3}
+\contentsline {subsection}{\numberline {1.2.4}GUI}{3}
 \contentsline {section}{\numberline {1.3}Completion}{3}
 \contentsline {section}{\numberline {1.4}Future Work}{3}
 \contentsline {chapter}{\numberline {2}Technical Documentation}{4}
+\contentsline {section}{\numberline {2.1}Altitude Virtual Machine}{4}
+\contentsline {subsection}{\numberline {2.1.1}Definitions}{4}
+\contentsline {subsection}{\numberline {2.1.2}Overall Structure}{5}
+\contentsline {subsection}{\numberline {2.1.3}Pointers and the Typemap}{5}
+\contentsline {subsection}{\numberline {2.1.4}Patches and Reversibility}{8}
+\contentsline {subsection}{\numberline {2.1.5}Merging patches}{10}
+\contentsline {subsection}{\numberline {2.1.6}Patch Summary}{10}
+\contentsline {section}{\numberline {2.2}Altitude User Interface}{10}
+\contentsline {subsection}{\numberline {2.2.1}Startup}{11}
+\contentsline {subsection}{\numberline {2.2.2}Commands}{11}
+\contentsline {subsection}{\numberline {2.2.3}Errors and Warnings}{11}

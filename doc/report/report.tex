@@ -1,5 +1,7 @@
 \documentclass[10pt,a4paper]{report}
 \usepackage[latin1]{inputenc}
+\usepackage{listings}
+\lstset{language=C}
 \begin{document}
 
 \tableofcontents
@@ -19,6 +21,15 @@ This project aims to prevent a significant amount of bugs derived from a novice'
 
 \section{Structure}
 How the parts fit together
+\subsection{Reversible Virtual Machine}
+very roughly what it is, what it does
+\subsection{Compiler}
+C->sexps
+\subsection{Assembler/Disassembler}
+sexps to bytecode
+\subsection{GUI}
+gui!
+
 \section{Completion}
 Not all of the stuff that was planned is done.
 
@@ -27,7 +38,6 @@ Some stuff (planned or othewise) that would be cool to do.
 
 \chapter{Technical Documentation}
 Chunks of the specification should go here; it's mostly documentation anyway.
-
 \section{Altitude Virtual Machine}
 
 \subsection{Definitions}
@@ -52,16 +62,16 @@ When this document speaks about "types", or "the type system", it is talking not
 
 By the time the VM gets a user program, it has already been compiled into sexpcode. The level of abstraction of sexpcode is like a type-aware assembly language. For instance, loops and if statements have been compiled away to explicit "goto"s, but operations like sizeof and finding a field of a structure given a pointer are left in symbolic form, and haven't been compiled down to constants or pointer arithmetic.
 
-Sexpcode has a simple form: Each sexp has a tag, chosen from a fixed set defined by an enum in sexp.h, and any number of children. Each child is either a string, an integer, or a sexp. Children of a sexp are represented as "struct sexp_element", which contains a union tagged with what type of element it is. So, it is common to see code like:
+Sexpcode has a simple form. Each sexp has a tag, chosen from a fixed set defined by an enum in sexp.h, and any number of children. Each child is either a string, an integer, or a sexp. Children of a sexp are represented as \lstinline{struct sexp_element}, which contains a union tagged with what type of element it is. So, it is common to see code like:
 
 \begin{verbatim}
         if (sexp->nelems == 1 &&
-            sexp->elems[0].type == ST_SEXP){
+            sexp-elems[0].type == ST_SEXP){
           struct sexp* only_child = sexp->elems[0].data.sexp;
         }
 \end{verbatim}
 
-The sexpcode is then passed to the function "compile" (in bytecode.c) which generates a struct program. The top-level objects are types, global variables, and functions. They are processed in that order, as variables may refer to types and functions may refer to either variables or types. "compile" separates out the three categories, then passes the types to "build_typemap" (the "typemap" is explained below)
+The sexpcode is then passed to the function "compile" (in bytecode.c) which generates a struct program. The top-level objects are types, global variables, and functions. They are processed in that order, as variables may refer to types and functions may refer to either variables or types. "compile" separates out the three categories, then passes the types to \lstinline{build_typemap} (the "typemap" is explained below)
 
 
 \subsection{Pointers and the Typemap}
@@ -72,7 +82,7 @@ In Java, a pointer (reference) always points to an entire blob (object). You can
 
 So, a Java reference carries a fixed, small set of assumptions. By having a Java reference, the programmer is assuming that there is an object of the referred-to type beginning at the memory address given by the reference. These are enforced by the implementation with a combination of compile-time typechecking and garbage collection.
 
-A C pointer is entirely different, and the set of assumptions made by the programmer about the pointer is often not completely known at compile-time. First of all, the mere act of having a pointer does not make any assumptions about memory (unlike in Java). It is perfectly OK in C to have a pointer such as "&(((int*)NULL)[5])", pointing at the 6th element of a null array, about which no assumptions at all can be made.
+A C pointer is entirely different, and the set of assumptions made by the programmer about the pointer is often not completely known at compile-time. First of all, the mere act of having a pointer does not make any assumptions about memory (unlike in Java). It is perfectly OK in C to have a pointer such as \lstinline{&(((int*)NULL)[5])}, pointing at the 6th element of a null array, about which no assumptions at all can be made.
 
 Rather, the assumptions in C are made by reading from or writing to the memory pointed to by the pointer. The first and most basic assumption made when reading or writing is that the pointer lies within the boundaries of an allocated, un-freed blob (blobs are allocated as part of a function's stack frame or by malloc() and freed upon return or free()). When this assumption is violated, the behaviour is undefined. Typical behaviours are a crash or silent corruption of memory.
 
@@ -120,91 +130,124 @@ Consider an object whose type is "union U". If the "num" element was last assign
 
 This example shows that "invalidness" is a deeper concept than one-bit-per-memory-location (as used by tools which detect uninitialised memory accesses), as a given piece of memory can easily be valid as one type and invalid as another.
 
-A more interesting example: suppose a function takes a struct A* pa. It casts it to a struct B*, so it now has both pa and pb which point to the same location. Further suppose that this piece of memory was previously used to store a struct A, so all the fields of *pa are valid (and let's say the union stored an int). Finally, suppose that the blob of memory pointed to by pa or pb is big enough to hold either a struct A or a struct B.
+A more interesting example: suppose a function takes a \lstinline{struct A* pa}. It casts it to a \lstinline{struct B*}, so it now has both \lstinline{pa} and \lstinline{pb} which point to the same location. Further suppose that this piece of memory was previously used to store a \lstinline{struct A}, so all the fields of \lstinline{*pa} are valid (and let's say the union stored an int). Finally, suppose that the blob of memory pointed to by \lstinline{pa} or \lstinline{pb} is big enough to hold either a \lstinline{struct A} or a \lstinline{struct B}.
 
-The function can happily read and write to *pa's fields. Furthermore, it can validly read and write to pb->st.next and pb->st.value, as pb->st is guaranteed to be the same as pa->st. Reading from pb->num will not necessarily return pa->un.num as the implementation is allowed to have different amounts of padding between elements of the two structs. The read from pb->num won't crash the program, but may produce an invalid value.
+The function can happily read and write to the fields of \lstinline{*pa}. Furthermore, it can validly read and write to \lstinline{pb->st.next} and \lstinline{pb->st.value}, as \lstinline{pb->st} is guaranteed to be the same as \lstinline{pa->st}. Reading from \lstinline{pb->num} will not necessarily return \lstinline{pa->un.num} as the implementation is allowed to have different amounts of padding between elements of the two structs. The read from \lstinline{pb->num} won't crash the program, but may produce an invalid value.
 
-Suppose then, that the function passes &pb->num to another function. This other function gets an int* argument, called i. Reading from *i will succeed but produce an invalid value for the reasons above. Writing to *i will have a very interesting effect: it will succeed, but it will invalidate pa->un and pa->ch!
+Suppose then, that the function passes \lstinline{&pb->num} to another function. This other function gets an \lstinline{int*} argument, called i. Reading from \lstinline{*i} will succeed but produce an invalid value for the reasons above. Writing to \lstinline{*i} will have a very interesting effect: it will succeed, but it will invalidate \lstinline{pa->un} and \lstinline{pa->ch}!
 
-This is because the program can't rely on a particular layout of structures (it is chosen arbitrarily by the compiler, with certain restrictions). So, it is possible that in a conforming C implementation, the write to *i will overwrite all or part of pa->un or even all or part of pa->ch! (Unusual layouts like these can happen if a compiler sees two similar structures and decides to pack one tightly for optimal space usage, and pad one generously to aligned boundaries for optimal speed). Altitude will detect that the write to *i invalidated pa->ch even though, in Altitude's layout, the objects don't overlap.
+This is because the program can't rely on a particular layout of structures (it is chosen arbitrarily by the compiler, with certain restrictions). So, it is possible that in a conforming C implementation, the write to \lstinline{*i} will overwrite all or part of \lstinline{pa->un} or even all or part of \lstinline{pa->ch}! (Unusual layouts like these can happen if a compiler sees two similar structures and decides to pack one tightly for optimal space usage, and pad one generously to aligned boundaries for optimal speed). Altitude will detect that the write to \lstinline{*i} invalidated \lstinline{pa->ch} even though, in Altitude's layout, the objects don't overlap.
 
 In C, a write to a memory location can invalidate the contents of an entirely different memory location (simply because the program couldn't possibly have known the locations were non-overlapping when the programmer wrote it), and Altitude can detect this sort of bug even though the invalidated memory location is not changed by the invalidating write!
 
-As it happens, \tt{pa->ch} won't be changed by the write since Altitude lays out pa->ch after the address pointed to by pb->num, but Altitude can also detect that it is possible for a conforming implementation of C to overlap them, and so invalidates pa->ch.
+As it happens, \lstinline{pa->ch} won't be changed by the write since Altitude lays out \lstinline{pa->ch} after the address pointed to by \lstinline{pb->num}, but Altitude can also detect that it is possible for a conforming implementation of C to overlap them, and so invalidates \lstinline{pa->ch}.
 
 This is what makes pointers in Altitude interesting: they carry information not just about what they point to, but what could be affected by a write through them (which may be much larger than their target). Messages are generated not only from inconsistencies in the program, but also from conditions that could cause inconsistencies in alternative implementations of C.
 
 To bring it back to the Java comparison: the int pointer i has more built-in assumptions than "there is an int at this memory address". It contains assumptions about the layout of memory around the int ("there is a struct B containing this memory address"). The assumptions for a particular pointer don't hold consistently, as in Java. It is merely required that for any set of assumptions active during a memory read, the last write to that piece of memory was working under the same assumptions.
 
+\subsection{Patches and Reversibility}
+Patches are a concept we use to model the execution of C programs. It is the patch model that allows reversibility to be so easily implemented on our virtual machine.
+
+The state of the VM is all the information pertaining to the running program, such as the call stack, values of the local variables, values of global variables, and any data allocated on the heap.
+
+We need to be able to switch from state to state while still maintaining enough information to go back to earlier ones. One point to note is that we needn't store every state, it is possible to just store states every so often as if we can restore an early state we can run forward from that point to get later ones.
+
+We can store this information as a series of patches. A patch from state s1 to s2 is enough information such that, given all the information we have at state s1, we could build state s2, and given the information at state s2 we could build s1.
+
+A patch could be represented as "From s1 to s2, these variables were changed from "some values" to "some other values", "these bits of memory" were allocated and had "these bits of data" stored in them, "these bits of memory" were freed and had "these bits of data" at the time they were freed".
+
+The point here is, a patch from s1 to s2 only stores the data that changed between states s1 and s2. This means we can run the VM in a reasonable amount of ram.
+
+Patches, as described, have some interesting structure. Firstly, consider merging two patches. If we have two patches to the program state which come one after the other, we can merge them into one big patch from the original state into the newest one.
+
+Secondly, consider the null patch. That is, the patch which says "nothing changed". Now consider the initial state, that is, the state of the VM just upon entry to main(). This will be referred to as the "base state". The state of the program can be considered as a big patch against the base state. This is not just an idle observation, it means we can actually store the current state of the running program as just another patch, and we need no special data structures for it.
+
+Suppose we want to save a checkpoint to return to during the running of the program (it doesn't really matter where we do this, every N instructions would be reasonable). We can take the patch representing the current state, add it to a list of checkpoints, and set our "current state" patch to the null patch (it is now a patch against the most recently saved checkpoint). Thus, saving snapshots can be done really quickly.
+
+That works fine for writes, but for reads we're going to need to know the current value of the variables. If we just have access to a list of differences from the previous state, we'd have to work backwards through the checkpoint list to get the actual value of the variable. So, in parallel we maintain another "current state" patch, representing the current state of all the program's variables. We should maintain the property that merging the checkpoint list yields the current state (i.e. following the history from the beginning will leave us where we are now).
+
+Stepping backward means reversing some checkpoint patches, stepping forwards means applying them again. With some relatively simple algorithms, we can get a lot of behaviour "for free".
+
+\subsection{Merging patches}
+One necessary part is an algorithm to merge patches. Here's a rough pseudo-pseudo-code version of it:
+
+Patches consist of a set of variables, saying for each variable whether it was created (allocated) by this patch, destroyed (freed), or changed value.
+
+To merge two patches p1 and p2, then for each variable in either p1 or p2:
+
+\begin{enumerate}
+\item If it only appears in p1 or p2, then it should appear like that in the merged patch.
+\item If it was created in p1 and modified in p2, then it should appear as created, with the modified value, in the merged patch.
+\item If it was modified in p1 and destroyed in p2, then it should appear as destroyed, with the old value, in the merged patch.
+\item If it was modified in p1 and modified in p2, then it should appear as modified, from the oldest to the newest value, in the merged patch. 
+\end{enumerate}
+
+The other cases are impossible (can't be modified before being created, etc). 
+
+\subsection{Patch Summary}
+A brief summary then: a patch in the context of the virtual machine is a difference between two states of the program. A state of the program includes things like the call stack and the local and global variables visible at a given time. Patches are bi-directional, which means you can utilise the same patch to go from a notional state one to state two and also to go from state two to state one. Execution of a program then can be viewed as a long string of patch applications, to get from the initial empty state to the end state. 
+
+One of the most useful and brilliant things about patches is that because they represent differences they can can be merged together to form a larger patch, still going between two notional states, but this time, those states are not adjacent in the actual execution of the program. This built-in compression of sorts is very useful, because, for example, you might not want to keep patches for each recursive step of a heavily recursive function, which might make thousands of recursive calls, but you do want to be able to step back over the computation. It's possible to simply merge each patch created as a recursive call executes with the patch taken as the function is first called, and you'll have a patch that goes straight from function call to result.
+
+Some interesting relationships fall out of this model of execution, namely: patches form a group, in the abstract algebraic sense. We have an associative operation (merging), an identity (the null patch), and an inverse (reversing the patch).
+
 \section{Altitude User Interface}
 Okay, so - the following is the protocol used by the UI when interacting with the VM as I see it. All commands and data are passed between the processes on stdin/stdout.
-
-
--- STARTUP --
-
+\subsection{Startup}
 User starts by selecting a C source code file. This file is passed to altitude as an argument:
 
 UI exec's new process: "altitude code/test/test.c" (maybe we use a switch or something, not important until it's written)
 
 At this point, altitude should parse/convert to bytecode and sit and wait - we want to set breakpoints etc. before running the code.
 
+\subsection{Commands}
 
--- COMMANDS --
+When we want to run forward to the next breakpoint, we send 'run'
 
-When we want to run forward to the next breakpoint, we send 'run':
-
-[UI >> Altitude]
-run
+[UI $\rangle\rangle$ Altitude] run
 
 When we want to run backwards to the prvious breakpoint, we 'runback'
 
-[UI >> Altitude]
-runback
+[UI $\rangle\rangle$ Altitude] runback
 
-When we want to set a breakpoint, we use 'set' followed by a line number:
+When we want to set a breakpoint, we use 'set' followed by a line number
 
-[UI >> Altitude]
-set #LINE_NO
+[UI $\rangle\rangle$ Altitude] set LINENO
 
-Similar to unset a breakpoint:
+Similar to unset a breakpoint
 
-[UI >> Altitude]
-unset #LINE_NO
+[UI $\rangle\rangle$ Altitude] unset LINENO
 
-To reset the program, i.e. jump to the start and wait, we use 'restart':
+To reset the program, i.e. jump to the start and wait, we use 'restart'
 
-[UI >> Altitude]
-restart
+[UI $\rangle\rangle$ Altitude] restart
 
-To get a dump of variables in scope, we use 'view':
+To get a dump of variables in scope, we use 'view'
 
-[UI >> Altitude]
-view
+[UI $\rangle\rangle$ Altitude] view
 
-This should return variable list in the following format:
+This should return variable list in the following format
+\begin{itemize}
+\item varlist = var [newline var]
+\item newline = newline, return or return-newline
+\item var = primtype varname value
+\item primtype = char  int  ... allllllll the other varitions of (un)signed long long / short int
+\item value = any single char for a char  any integer for an int (or one of the variations)
+\end{itemize}
 
-var_list := var [newline var]
+That's just primite types... structs, unions and arrays are a whole other kettle of text.
 
-newline := \n | \r | \r\n
-
-var := prim_type var_name value
-
-prim_type := char | int | ... allllllll the other varitions of (un)signed long long / short int
-
-value := any single char for a char | any integer for an int (or one of the variations)
-
-/*FIXME*/ That's just primite types... structs, unions and arrays are a whole other kettle of text.
-
--- ERRORS & WARNINGS --
+\subsection{Errors and Warnings}
 
 Errors and warnings are passed from altitude on stderr.
 
 They take the form:
-[Altitude >> UI]
+[Altitude $\rangle\rangle$ UI] [errno] message
 
-[errno] message
+message may contain a reference in the form \lstinline{@filename:lineno:byteoffset}
 
-message may contain a reference in the form @filename:lineno:byteoffset
 
 Altitude will display this on its error console, and if it is a crash-worthy error, the program will alert the user explicitly.
 
+\end{document}
