@@ -177,6 +177,7 @@ namespace AltitudeUI
                 // set up data stream handles
                 this.altitude_vm.OutputDataReceived += new DataReceivedEventHandler(altitude_vm_OutputDataReceived);
                 this.altitude_vm.Exited += new EventHandler(altitude_vm_Exited);
+                this.altitude_vm.BeginOutputReadLine();
             }
             catch (Win32Exception w32e)
             {
