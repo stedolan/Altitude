@@ -9,23 +9,24 @@
 #define MAXFILE (1024*1024)
 
 int main(int argc, char** argv){
-  if (argc <= 2){
+  if (argc <= 1){
     fprintf(stderr, "usage: %s [run|dump] <program>, where <program> is a sexp-compiled C file\n", argv[0]);
     exit(1);
   }
-  FILE* prog = fopen(argv[2], "r");
+  char* file = argv[argc-1];
+  FILE* prog = fopen(file, "r");
   if (!prog){
     perror("Couldn't open program");
   }
   char progbuf[MAXFILE];
   fread(progbuf, MAXFILE, 1, prog);
   if (!feof(prog)){
-    fprintf(stderr, "Couldn't read all of %s", argv[2]);
+    fprintf(stderr, "Couldn't read all of %s", file);
     exit(1);
   }
   struct sexp* sexpcode = sexp_parse(progbuf);
   if (!sexpcode){
-    fprintf(stderr, "Couldn't parse s-expressions in %s", argv[2]);
+    fprintf(stderr, "Couldn't parse s-expressions in %s", file);
     exit(1);
   }
   struct program* program = compile(sexpcode);
@@ -36,10 +37,18 @@ int main(int argc, char** argv){
     exit(1);
   }
 
-  while(1){
-    get_command();
-    if(parse_command(program)){
-      break;
+  if (argc == 3){
+    if (!strcmp(argv[1], "run")){
+      run(program);
+    }else if (!strcmp(argv[1], "dump")){
+      program_dump(program);
+    }
+  }else{ 
+    while(1){
+      get_command();
+      if(parse_command(program)){
+        break;
+      }
     }
   }
   return 0;

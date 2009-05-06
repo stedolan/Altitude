@@ -387,9 +387,9 @@ void function_dump(struct function* f){
       char locbuf[200];
       snprintf(locbuf, 200, LOC_FMT, LOC_ARGS(f->locs[loc]));
       locbuf[199]=0;
-      printf("  %-20s  ", locbuf);
+      printf("  %-30s  ", locbuf);
     }else{
-      printf("  %-20s  ","");
+      printf("  %-30s  ","");
     }
     opcode op = instr_opcode(f->code[i]);
     printf("%04d: ", i);

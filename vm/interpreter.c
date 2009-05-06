@@ -45,7 +45,7 @@ REPTYPE(PS_INT) run(struct program* prog){
     goto abnormal_quit;
   }
   vm.frame = stackframe_new(NULL, prog->main_function);
-  struct blob* mainret = blob_alloc(user_sizeof(PS_INT), PS_INT);
+  struct blob* mainret = blob_alloc(user_sizeof(PS_INT), PS_INT, NULL);
   vm.frame->wants_return = 1;
   vm.frame->return_ptr = pointer_to_blob(mainret, PS_INT);
   vm.pc = vm.frame->func->code;
@@ -128,7 +128,7 @@ REPTYPE(PS_INT) run(struct program* prog){
   say(PROGRAM_START, "Program starting");
   //FIXME: arithmetic error checking (overflow and such)
   while (1){
-    sayf(TRACE, "Executing %s", opcode_name(instr_opcode(*vm.pc)));
+    //    sayf(TRACE, "Executing %s", opcode_name(instr_opcode(*vm.pc)));
     switch(instr_opcode(*vm.pc)){
     case ARITH_PLUS: NEEDS_STACK(2);
       switch (instr_type(*vm.pc)){
@@ -435,7 +435,7 @@ REPTYPE(PS_INT) run(struct program* prog){
   primitive_val retval;
   TRY(pointer_deref(&retval, pointer_to_blob(mainret, PS_INT)));
   if (!retval.valid){
-    say(INSTR, "main returned invalid value");
+    say(INSTR, "main returned seemingly invalid value");
   }
   REPTYPE(PS_INT) mainval =  USERDATA_PART(retval.value, PS_INT);
   sayf(PROGRAM_END_OK, "Function main returned %d", (int)mainval);

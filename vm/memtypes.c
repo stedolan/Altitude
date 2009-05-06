@@ -6,6 +6,7 @@
 #include "hashtable.h"
 #include "error.h"
 #include "sexp.h"
+#include "bytecode.h"
 #include <assert.h>
 
 /* First half or so of this file is types and typemap,
@@ -440,7 +441,7 @@ static int byte_offset(struct pointer* p){
 
 
 
-struct blob* blob_alloc(usersize_t size, usertype_t type){
+struct blob* blob_alloc(usersize_t size, usertype_t type, struct var_decl* v){
   struct blob* b = malloc(sizeof(struct blob));
   b->length = size;
   //Allocate a whole number of userdatas, enough to hold size bytes
@@ -448,9 +449,13 @@ struct blob* blob_alloc(usersize_t size, usertype_t type){
 
   //FIXME: fill in b->data with something better
   memset(b->data, 42, size);
+
+  b->top_type = 0;
   
   b->pointer = ptr_new(b, type, 0, 0);
   b->decltype = type;
+
+  b->decl = v;
   
   //The valid map is allocated one bit per byte of userdata
   //This is big enough for anything (the most inefficient would be a char array)
@@ -519,7 +524,10 @@ int pointer_index(userptr_t* ret, userptr_t base_ptr, int idx){
     else
       path += idx * typemap->layouts[ctype]->size;
   }else{
-    path += idx * typemap->layouts[top_type]->nchildren;
+    if (is_ptr_type(top_type))
+      path += idx * PRIM_USERSIZE(PT_PTR);
+    else
+      path += idx * typemap->layouts[top_type]->nchildren;
   }
   *ret = ptr_new(ptr->blob, top_type, path, ctype);
   return 1;
@@ -647,7 +655,11 @@ static int blob_read(struct blob* b, int pos, primitive_val* val){
   val->value = b->data[idx];
   val->valid = bitset_get(b->valid_map, pos);
   if (!val->valid){
-    say(DUBIOUS_READ, "Seemingly uninitialised or undefined value read");
+    if (b->decl){
+      sayf(DUBIOUS_READ, "Seemingly uninitialised or undefined value read (%s, defined at "LOC_FMT ")", b->decl->name->string, LOC_ARGS(b->decl->loc));
+    }else{
+      say(DUBIOUS_READ, "Seemingly uninitialised or undefined value read");
+    }
   }
   return 1;
 }
@@ -663,14 +675,13 @@ int pointer_deref(primitive_val* ret, userptr_t ptr){
     return 1;
   }else{
     usertype_t t = pointer_type(ptr);
-    sayf(DBG, "deref type: [%d]%s", get_ptr_levels(t), get_base_type_name(t)->string);
+    //    sayf(DBG, "deref type: [%d]%s", get_ptr_levels(t), get_base_type_name(t)->string);
     if (is_ptr_type(t)){
       ret->type = PT_PTR;
     }else{
       assert(t && t < N_PRIMITIVE_DATA_TYPES);
       ret->type = (primtype)t;
     }
-    sayf(DUBIOUS_READ, "deref - %d", ret->type);
     if (p->ctype && !p->top_type){
       say(DUBIOUS_READ, "Reading through a pointer not known to be valid");
       return blob_read(p->blob, p->path, ret);
@@ -706,6 +717,13 @@ static int blob_write(struct blob* b, int pos, primitive_val val){
     say(INVALID_WRITE, "Out-of-bounds write");
     return 0;
   }
+  if (!val.valid){
+    if (b->decl){
+      sayf(DUBIOUS_WRITE, "Seemingly uninitialised or undefined value written (%s, defined at "LOC_FMT ")", b->decl->name->string, LOC_ARGS(b->decl->loc));
+    }else{
+      say(DUBIOUS_WRITE, "Seemingly uninitialised or undefined value written");
+    }
+  }
   int idx = pos >> 3;
 
   //FIXME: what happens when small types are written
@@ -723,22 +741,23 @@ int pointer_assign(userptr_t ptr, primitive_val val){
     say(INVALID_READ, "Trying to assign to a function");
     return 0;
   }else{
-    sayf(DUBIOUS_WRITE, "writing something! %d", val.type);
+    //    sayf(DUBIOUS_WRITE, "writing something! %d, to %x [%d]%s", val.type, pointer_type(ptr), get_ptr_levels(pointer_type(ptr)), get_base_type_name(pointer_type(ptr))->string);
     assert(is_ptr_type(pointer_type(ptr)) || pointer_type(ptr) == val.type);
+    if (!val.valid) say(DUBIOUS_WRITE, "Seemingly uninitialised or undefined value written");
+
     if (p->ctype && !p->top_type){
-      say(DUBIOUS_WRITE, "Writing through a pointer not known to be valid");
       return blob_write(p->blob, p->path, val);
     }else{
       struct pointer fixed = *p;
       if (!p->blob->top_type){//FIXME: ctype here???
         //nothing had ever been written into this memory
-        say(DEBUG, "first write into uninitialised memory");
+        say(DBG, "first write into uninitialised memory");
         p->blob->top_type = p->top_type;
       }else if (try_safe_cast(&fixed, p->blob->top_type)){
         //the pointer "fits" into what's actually in memory. Oh good.
       }else{
         //the pointer doesn't fit, invalidate the entire blob
-        say(DUBIOUS_WRITE, "Write has invalidated previous contents of memory");
+        sayf(DUBIOUS_WRITE, "Write has invalidated previous contents of memory - was type [%d]%s, trying to write type [%d]%s", get_ptr_levels(p->blob->top_type), get_base_type_name(p->blob->top_type)->string, get_ptr_levels(p->top_type), get_base_type_name(p->top_type)->string);
         p->blob->top_type = p->top_type;
         bitset_clear(p->blob->valid_map);
       }

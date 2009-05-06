@@ -46,7 +46,7 @@ int parse_command(struct program* current){
 	        return 1;
 	}
 	else{
-		sayf(BADCOMMAND, "Unrecognised command: %s", &ui_proto_command_buf);
+		sayf(BADCOMMAND, "Unrecognised command: %s", ui_proto_command_buf);
 	}
 	return 0;
 }

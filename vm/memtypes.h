@@ -138,7 +138,7 @@ int get_type_offset(atom base, atom field);
 
 
 
-
+struct var_decl;
 /* A blob is a contiguous chunk of user-memory, used for both stack
    and heap allocations */
 struct blob{
@@ -162,11 +162,12 @@ struct blob{
   userptr_t pointer;
   usertype_t decltype;
   
+  struct var_decl* decl;
 
   uint32_t flags;
 };
 
-struct blob* blob_alloc(usersize_t length, usertype_t type);
+struct blob* blob_alloc(usersize_t length, usertype_t type, struct var_decl*);
 
 
 

@@ -30,7 +30,7 @@ int sys_malloc(int wantreturn, userptr_t retval,
     primitive_val newmem;
     newmem.valid = 1;
     USERDATA_PART(newmem.value,PT_PTR) = 
-      pointer_to_blob(blob_alloc(bytes,0),0);
+      pointer_to_blob(blob_alloc(bytes,0,NULL),0);
     newmem.type = PT_PTR;
     return pointer_assign(retval, newmem);
   }

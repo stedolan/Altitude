@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -ggdb -std=c99 -Wall -pedantic -Wextra
+CFLAGS = -ggdb -std=c99 -Wall -pedantic -Wextra -O2
 
 OBJCOMP = $(CC) -c $(CFLAGS)
 
@@ -68,4 +68,5 @@ clean:
 	rm *.o
 	rm tests/*.o
 	rm tests/*_test
+	rm altitude_bin
 

@@ -6,7 +6,7 @@ module H = Hashtbl
 
 let freshNameID = ref Int64.zero
 
-let rec pSexpLoc ?(sep=break) (loc: location) (tag: string) (children: doc list) = 
+let rec pSexpLoc ?(bodysep=break) ?(sep=break) (loc: location) (tag: string) (children: doc list) = 
   let locdata =
     if loc.line == -1 then
       text "" 
@@ -16,12 +16,12 @@ let rec pSexpLoc ?(sep=break) (loc: location) (tag: string) (children: doc list)
   text "(" ++ locdata ++ text tag
     ++ (match children with
       [] -> text ")"
-    | _ -> break ++ align ++ seq sep (fun x -> x) children ++ text ")" ++ unalign) 
+    | _ -> bodysep ++ align ++ seq sep (fun x -> x) children ++ text ")" ++ unalign) 
     
 and pStr (s: string) = chr '"' ++ text (escape_string s) ++ chr '"'
 
-and pSexp ?(sep=break) (tag: string) (children: doc list) = 
-  pSexpLoc ~sep:sep {line = -1; file = ""; byte = -1;} tag children
+and pSexp ?(bodysep=break) ?(sep=break) (tag: string) (children: doc list) = 
+  pSexpLoc ~bodysep:bodysep ~sep:sep {line = -1; file = ""; byte = -1;} tag children
 
 and freshName () : string = begin
   let str = Int64.to_string !freshNameID in
@@ -429,8 +429,8 @@ and pStmtKind () = function
 and dsGlobal (out: out_channel) (g: global) : unit =
   let psVarDecl l v =
     pSexpLoc l "var" [psType v.vtype; pStr v.vname] in
-  fprint out !lineLength ((match g with
-    GFun (fdec, l) -> pSexpLoc ~sep:line l "function" [
+  fprint out 100 ((match g with
+    GFun (fdec, l) -> pSexpLoc ~bodysep:(line ++ text "  ") ~sep:line l "function" [
       pStr fdec.svar.vname;
       pSexp ~sep:line "formals" (List.map (psVarDecl l) fdec.sformals);
       pSexp ~sep:line "locals" (List.map (psVarDecl l) fdec.slocals);
@@ -441,7 +441,7 @@ and dsGlobal (out: out_channel) (g: global) : unit =
       psVarDecl l vi
 
 
-  | GCompTag (comp, loc) -> pSexpLoc loc 
+  | GCompTag (comp, loc) -> pSexpLoc ~bodysep:(line ++ text "  ") loc 
 	(if comp.cstruct then "struct" else "union")
 	[pStr (Cil.compFullName comp);
 	 pSexp ~sep:line "fields" (List.map 

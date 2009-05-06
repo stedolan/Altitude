@@ -125,20 +125,21 @@ typedef enum{
   do{							\
     if (_should_say(E_##category)){			\
       if ((E_##category) < 100){			\
-	fprintf(stderr, "[%03d] %s:%d: " format "\n",	\
+	fprintf(stdout, "[%03d] %s:%d: " format "\n",	\
 		(E_##category), __FILE__, __LINE__,	\
 		__VA_ARGS__);				\
       }else if ((E_##category < 300)){                  \
-	fprintf(stderr, "[%03d] " format                \
+	fprintf(stdout, "[%03d] " format                \
                 " (" LOC_FMT ")\n",                     \
 		(E_##category),                         \
                 __VA_ARGS__,                            \
                 LOC_ARGS(current_location()));          \
       }else{                                            \
-	fprintf(stderr, "[%03d] " format "\n",		\
+	fprintf(stdout, "[%03d] " format "\r\n",        \
 		(E_##category), __VA_ARGS__);		\
       }							\
       _possibly_quit(E_##category);			\
+      fflush(stdout);                                   \
     }							\
   }while(0)
 
