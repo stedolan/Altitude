@@ -1,0 +1,22 @@
+(program 
+(@"odd.c":1:62 function
+  "main"
+  (formals)
+  (locals (@"odd.c":1:62 var (type (int)) "x")
+          (@"odd.c":1:62 var (type (int)) "y")
+          (@"odd.c":1:62 var (type (int)) "z"))
+  (body (load_l "x")
+        (constant.int 5)
+        (@"odd.c":5:103 assign)
+        (load_l "y")
+        (load_l "x")
+        (deref)
+        (@"odd.c":6:112 assign)
+        (load_l "y")
+        (load_l "z")
+        (deref)
+        (@"odd.c":7:121 assign)
+        (load_l "y")
+        (deref)
+        (@"odd.c":8:130 return)))
+)
