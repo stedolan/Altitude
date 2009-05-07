@@ -49,6 +49,7 @@ There is of course much future work that can be done on this project. Some of th
 \item Patch model of execution not implemented due to time constraints
 \item GUI has scope for improvement, as with all user interfaces
 \item System should be able to self-host
+\item Implementation of all of C99 as per the standard
 \item Ability to link against external C libraries to allow for running of user code without needing to sandbox the entire codebase
 \end{itemize}
 
@@ -73,7 +74,15 @@ A "stack frame" of a user-function is the activation record for that function an
 When this document speaks about "types", or "the type system", it is talking not about the C type system, but the Altitude one. These differ in a number of small, mostly irrelevant ways. Generally, the differences are that C defines some types to be different but compatible, while Altitude collapses these definitions into one. For instance, a function argument of type int[10] is just passed as a pointer in C, and it is legal to pass to a function that requires an int[10] an int[15] (or even an int[5], although that often causes bad things). In Altitude, there are no array types in function parameters, just pointers. Another difference is that Altitude conflates "signed char" and plain "char", which is not the case in C (C says "char" is a distinct type from both signed and unsigned char, but must be completely equivalent to an implementation-specified one of them. Yippee.).
 
 
-\subsection{Overall Structure}
+\subsection{VM Structure}
+Structurally this VM is a stack machine, which means that the program's memory is laid out in a stack, and code operates upon that stack, pushing and pulling results onto and off of it at will. The stack in our VM, however, is a stack of typed elements, and type checking is done along with other sanity checks every time an operation is performed on the stack. For example, the operation of addition of two unsigned integers will check that there are at least two elements on the stack, that they are both of the correct type for the operation, and that the operation will not overflow when attempted. Overflow detection in particular is tricky, since C has different overflow rules for certain types of data.
+
+\subsubsection{Use of Pointers}
+In this VM, pointers are used heavily as a means of abstraction. Pointers are explained in detail in later sections of this document, so for now it will suffice to say that in Altitude, what corresponds to a pointer in the context of the user's program has lots of metadata associated with it in the VM to effectively diagnose problems. Pointers are used to abstract upon fundamental operations, since a lot of such operations fit nicely into a model where a pointer is pushed onto the stack, and an operation is performed upon it. Since we had to implement pointers for the rest of C, we decided to use them as much as we could to reduce the cost of implementing them, and found that we got lots of behaviour that would otherwise have had to have been special-cased out for free!
+
+For example, to call a function, the VM pushes a pointer to that function onto the stack, and then calls the function through the pointer. This means that function pointers in C can be expressed directly in terms of VM-level pointers, since the mechanism is the same in both contexts. Pointers are also used for local variable access: a pointer to the variable in question is pushed onto the stack and dereferenced to obtain the value of the variable. All operations on that variable in user code become operations on a VM-pointer to the variable when compiled into bytecode. Of course, the VM's pointer implementation is used to represent plain old C pointers as well.
+
+\subsection{Journey of a Program}
 
 By the time the VM gets a user program, it has already been compiled into sexpcode. The level of abstraction of sexpcode is like a type-aware assembly language. For instance, loops and if statements have been compiled away to explicit "goto"s, but operations like sizeof and finding a field of a structure given a pointer are left in symbolic form, and haven't been compiled down to constants or pointer arithmetic.
 
@@ -207,10 +216,16 @@ One of the most useful and brilliant things about patches is that because they r
 
 Some interesting relationships fall out of this model of execution, namely: patches form a group, in the abstract algebraic sense. We have an associative operation (merging), an identity (the null patch), and an inverse (reversing the patch).
 
+\section{User Standard Library}
+No implementation of C is complete without a standard library implementation to accompany it, providing functions for input and output, manipulation and allocation of memory and so on. However, in the case of C code running under Altitude, calls to standard library functions must be processed on a virtual machine, so we must re-engineer parts of it to operate on our stack machine. Functions such as memory allocation and deallocation, for example, must be written by the implementor of the standard library for each machine it will be used on, since any given machine may differ substantially from another in how it physically lays out and handles its memory. The standard library contains functions which cannot be implemented in user-space as defined previously, since they communicate with the underlying hardware (or in our case, software) at a level inexpressible in terms of user-space constructs.
+
 \section{CIL Compiler \& S-Expression Intermediate Language}
+\subsection{S-Expression Format}
 
-
+\subsection{Compiling Example}
+Insert full example of raw C to bytecode here.
 \section{Altitude User Interface}
+FIXME: description, implementation, screenshots, Protocol, possiby location information spiel - line highlighting?
 Okay, so - the following is the protocol used by the UI when interacting with the VM as I see it. All commands and data are passed between the processes on stdin/stdout.
 \subsection{Startup}
 User starts by selecting a C source code file. This file is passed to altitude as an argument:
