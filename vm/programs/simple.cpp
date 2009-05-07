@@ -1,7 +1,7 @@
-# 1 "simple.c"
+# 1 "programs/simple.c"
 # 1 "<built-in>"
 # 1 "<command-line>"
-# 1 "simple.c"
+# 1 "programs/simple.c"
 struct astruct{
   int thisval;
 };

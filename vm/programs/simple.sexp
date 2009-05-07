@@ -1,22 +1,22 @@
 (program 
-(@"simple.c":1:68 struct
+(@"simple.c":1:0 struct
   "struct astruct" (fields (field (type (int)) "thisval")))
-(@"simple.c":5:103 struct
+(@"simple.c":5:35 struct
   "struct somestruct" (fields (field (type (int)) "val")
                               (field (type (comptype "struct astruct")) "obj")))
-(@"simple.c":10:159 function
+(@"simple.c":10:91 function
   "sum"
-  (formals (@"simple.c":10:159 var (type (int)) "x"))
-  (locals (@"simple.c":10:159 var (type (comptype "struct somestruct")) "s")
-          (@"simple.c":10:159 var (type (int)) "i"))
+  (formals (@"simple.c":10:91 var (type (int)) "x"))
+  (locals (@"simple.c":10:91 var (type (comptype "struct somestruct")) "s")
+          (@"simple.c":10:91 var (type (int)) "i"))
   (body (load_l "s")
         (offset "struct somestruct" "obj")
         (offset "struct astruct" "thisval")
         (constant.int 0)
-        (@"simple.c":12:200 assign)
+        (@"simple.c":12:132 assign)
         (load_l "i")
         (constant.int 0)
-        (@"simple.c":13:226 assign)
+        (@"simple.c":13:158 assign)
         (label "$LOOPSTART$ALT$0")
         (load_l "i")
         (deref)
@@ -24,7 +24,7 @@
         (deref)
         (lt.int)
         (condgoto (label "$ALT$2"))
-        (@"simple.c":13:221 goto (label "$LOOPEND$ALT$1"))
+        (@"simple.c":13:153 goto (label "$LOOPEND$ALT$1"))
         (goto (label "$ALT$3"))
         (label "$ALT$2")
 
@@ -39,30 +39,30 @@
         (load_l "i")
         (deref)
         (plus.int)
-        (@"simple.c":14:248 assign)
+        (@"simple.c":14:180 assign)
         (load_l "i")
         (load_l "i")
         (deref)
         (constant.int 1)
         (plus.int)
-        (@"simple.c":13:226 assign)
+        (@"simple.c":13:158 assign)
         (goto (label "$LOOPSTART$ALT$0"))
         (label "$LOOPEND$ALT$1")
         (load_l "s")
         (offset "struct somestruct" "obj")
         (offset "struct astruct" "thisval")
         (deref)
-        (@"simple.c":16:274 return)))
-(@"simple.c":19:299 function
+        (@"simple.c":16:206 return)))
+(@"simple.c":19:231 function
   "main"
   (formals)
-  (locals (@"simple.c":19:299 var (type (int)) "tmp"))
+  (locals (@"simple.c":19:231 var (type (int)) "tmp"))
   (body (load_l "tmp")
         (constant.int 40)
         (load_f "sum")
         (deref)
-        (@"simple.c":20:313 callassign 1)
+        (@"simple.c":20:245 callassign 1)
         (load_l "tmp")
         (deref)
-        (@"simple.c":20:313 return)))
+        (@"simple.c":20:245 return)))
 )
