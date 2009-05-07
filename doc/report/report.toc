@@ -21,10 +21,10 @@
 \contentsline {subsection}{\numberline {2.1.7}Patch Summary}{12}
 \contentsline {section}{\numberline {2.2}User Standard Library}{12}
 \contentsline {section}{\numberline {2.3}CIL Compiler \& S-Expression Intermediate Language}{12}
-\contentsline {subsection}{\numberline {2.3.1}S-Expression Format}{12}
+\contentsline {subsection}{\numberline {2.3.1}S-Expression Format}{13}
 \contentsline {subsubsection}{Grammar}{13}
 \contentsline {subsubsection}{Location Information}{13}
-\contentsline {subsection}{\numberline {2.3.2}Compiling Example}{13}
+\contentsline {subsection}{\numberline {2.3.2}Compiling Example}{14}
 \contentsline {subsubsection}{The C source}{14}
 \contentsline {subsubsection}{Processed source}{14}
 \contentsline {subsubsection}{Simplified C form, after CIL first pass}{15}
@@ -33,4 +33,4 @@
 \contentsline {section}{\numberline {2.4}Altitude User Interface}{19}
 \contentsline {subsection}{\numberline {2.4.1}Startup}{19}
 \contentsline {subsection}{\numberline {2.4.2}Commands}{19}
-\contentsline {subsection}{\numberline {2.4.3}Errors and Warnings}{19}
+\contentsline {subsection}{\numberline {2.4.3}Errors and Warnings}{20}
