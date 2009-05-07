@@ -54,6 +54,21 @@ There is of course much future work that can be done on this project. Some of th
 \item Ability to link against external C libraries to allow for running of user code without needing to sandbox the entire codebase
 \end{itemize}
 
+\section{Usage}
+The best way to use the system is through the GUI. However to get the system to build there are some prerequisites. The following must be installed in order for the system to work.
+
+\begin{itemize}
+ \item A working OCaml installation with CIL
+ \item \lstinline{C#} implementation with .Net framework implementation 
+and WinForms installed
+ \item A working C compiler (GCC by preference)
+\end{itemize}
+
+To build the project, there are makefiles in each of the directories 
+immediately inside the trunk folder. To build the CIL compiler part of 
+the project, you need to edit one line in its makefile to tell it where you have installed the CIL library. The UI does not require building. The VM can be built by running the makefile in the vm folder. When the CIL compiler and VM have been built, the program AltitudeUI.exe in the Release folder of the ui section may be run.
+
+There is a simple command line interface to the system: the compiler and vm can each be run separately with options defined in the specification to generate intermediate output for inspection.
 \chapter{Technical Documentation}
 \section{Altitude Virtual Machine}
 
