@@ -33,18 +33,7 @@ This component processes the raw input C code and runs it through the C Intermed
 The assembler is not a discrete program, but rather a library which is used to convert a sexpcode program into VM-executable form. This library consists mainly of a means of defining bytecodes, mapping them to actual instructions expressed in C code, and associating names, types and s-expression tags with them, all of which are used throughout the system to propagate information about the code being run.
 
 \subsection{GUI}
-The Graphical User Interface (GUI) for Altitude allows the end user to easily interact with the VM. There is a fairly simple protocol that the VM respects; the GUI uses this protocol to communicate with the VM.
-
-The GUI was originally to be written in C using Glade to design it graphically, but due to time constraints, we chose \lstinline{C#} for its quick turn-around time and cross platform availability (via the Mono implementation of the .NET Framework). The GUI was designed in Visual Studio 2008, which lead to one or two bugs when run under Linux (end of line being return newline versus newline, for example), but ultimately it runs cleanly on all common desktop platforms. When the GUI is loaded, it opens the main editor form, and the Error and IO Console toolboxes.
-
-\subsubsection{GUI Protocol}
-When the VM wishes to raise an event with the GUI, it writes the following to standard output:
-
-[ERR\_NO] ERR\_MSG
-
-Error number is a defined as an enum; each type of error altitude can check for is given its own number, as are certain special messages to the GUI (not strictly errors). These include when the user program wishes to output data to the IO console. The GUI will colour-code the entries to the error console, based on severity. We also had thoughts about setting the GUI to ignore certain ranges of errors on the fly -  for example, if you knew your program had several errors of type X but only wanted to root out error type Y - but this has yet to be implemented.
-
-The message may contain line number information in the form \lstinline{@file_name:line_no:byte_offset}. The file location metadata is passed through the compilation process in the bytecode. This is then available in the form of a \lstinline{struct location} for the VM to output. The GUI parses the input line for such location information and displays it in the error console. The GUI will also colour-code the entries to the error console, based on severity.
+The Graphical User Interface (GUI) for Altitude allows the end user to easily interact with the VM. There is a fairly simple protocol that the VM respects; the GUI uses this protocol to communicate with the VM. The GUI is styled after common integrated development environments, such as Eclipse or Netbeans. It's written in \lstinline{C#} using the .Net framework, and runs equally well on both Windows and Linux under the Mono project's .Net implementation
 
 \section{Completion}
 We have not finished the project in it's entirety as laid out in the initial design and specification documents, but a sizeable portion of it is done. The system can execute and report errors in C code, so the core functionality is there. Not all of C is yet supported, however, this is only a matter of time. There follows a list of the major features we have completed.
@@ -533,8 +522,16 @@ Function <main>:
 \section{Altitude User Interface}
 
 \subsection{Description}
+The GUI was originally to be written in C using Glade to design it graphically, but due to time constraints, we chose \lstinline{C#} for its quick turn-around time and cross platform availability (via the Mono implementation of the .NET Framework). The GUI was designed in Visual Studio 2008, which lead to one or two bugs when run under Linux (end of line being return newline versus newline, for example), but ultimately it runs cleanly on all common desktop platforms. When the GUI is loaded, it opens the main editor form, and the Error and IO Console toolboxes.
 
 \subsection{Implementation}
+When the VM wishes to raise an event with the GUI, it writes the following to standard output:
+
+[ERR\_NO] ERR\_MSG
+
+Error number is a defined as an enum; each type of error altitude can check for is given its own number, as are certain special messages to the GUI (not strictly errors). These include when the user program wishes to output data to the IO console. The GUI will colour-code the entries to the error console, based on severity. We also had thoughts about setting the GUI to ignore certain ranges of errors on the fly -  for example, if you knew your program had several errors of type X but only wanted to root out error type Y - but this has yet to be implemented.
+
+The message may contain line number information in the form \lstinline{@file_name:line_no:byte_offset}. The file location metadata is passed through the compilation process in the bytecode. This is then available in the form of a \lstinline{struct location} for the VM to output. The GUI parses the input line for such location information and displays it in the error console. The GUI will also colour-code the entries to the error console, based on severity.
 
 \subsection{UI-VM Command Protocol}
 The following is the protocol used by the UI when interacting with the VM. All commands and data are passed between the processes on stdin/stdout.
