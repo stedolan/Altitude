@@ -20,24 +20,39 @@ C compilers usually focus on producing the fastest correct code possible and ind
 This project aims to prevent a significant amount of bugs derived from a novice's lack of in-depth understanding of how C works. There are many cases where even experienced users are driven to frustration by subtle differences in how code is handled, and nobody should have to know exactly how every compiler their program may ever be run on will handle their code. To this end, our aims are to prevent implementation-specific code from being written, and to provide reasons why any given error is, in fact, an error.
 
 \section{Structure}
-How the parts fit together
+This project was envisioned as a chain of tools which could be developed separately. The core components are a compiler from plain C code to an s-expression based format which encodes location information, an assembler/disassembler which loads this s-expression format and compiles it to bytecode (and vice versa), and a virtual machine, which executes the bytecode. This forms a command line toolchain, which accepts a command language of our own devising. The GUI interacts with an instance of this toolchain via the command language using standard input and output.
+
 \subsection{Reversible Virtual Machine}
-very roughly what it is, what it does
+The core component of the system, this actually runs any given program, and produces debugging output. The virtual machine design includes some innovations, not the least of which is the elegant patch model of execution described in later sections, which enables the reversible operation of the system. The virtual machine runs the result of compiling and assembling C code, but unlike traditional compilation processes, large amounts of information about the source is retained, since we are focusing not on speed of operation but on completeness of information when the inevitable errors occur. The VM is written largely in C with some C Pre-Processor. The VM may be found in the vm directory in the project source. It's invoked with the command line "altitude filename" where filename is the location of some input C source. This is actually a script which compiles the C source passed into s-expression before invoking the actual program to be run, \lstinline{altitude_bin} on the resulting .sexp file.
+
 \subsection{Compiler}
-C->sexps
+This component processes the raw input C code and runs it through the C Intermediate Language library, which is written in OCaml. This greatly simplifies the syntax of the program, replacing various compound constructs with simpler ones wherever possible and reducing the syntax used in the program to a small set of operations which are sufficient to express the semantics contained within. This simplified C is then processed again to strip from it information about the location of source items, and this results in C code expressed in an s-expression based format. The CIL powered compiler is to be found in the cilcomp directory in the project source. It's invoked with the commandline "ccomp filename", where filename is the name of the input C source.
+
 \subsection{Assembler/Disassembler}
-sexps to bytecode
+The assembler is not a discrete program, but rather a library which is used to convert a sexpcode program into VM-executable form. This library consists mainly of a means of defining bytecodes, mapping them to actual instructions expressed in C code, and associating names, types and s-expression tags with them, all of which are used throughout the system to propagate information about the code being run.
+
 \subsection{GUI}
-gui!
+The GUI is the interface most people will use to interact with the software. It is styled after integrated development environments, with an editor for code and several output panes displaying the various messages the system can relay to the user.
 
 \section{Completion}
-Not all of the stuff that was planned is done.
+We have not finished the project in it's entirety as laid out in the initial design and specification documents, but a sizeable portion of it is done. The system can execute and report errors in C code, so the core functionality is there. Not all of C is yet supported, however, this is only a matter of time. There follows a list of the major features we have completed.
+\begin{itemize}
+\item Compiler from C to simplified C syntax
+\item Assembler/Disassembler from simplified C to VM Bytecode
+\item VM runs but not all instructions are implemented
+\item GUI sufficiently complete to allow users to view, run and diagnose problems with C programs the VM can run
+\end{itemize}
 
 \section{Future Work}
-Some stuff (planned or othewise) that would be cool to do.
+There is of course much future work that can be done on this project. Some of the things we'd like to do are listed below.
+\begin{itemize}
+\item Patch model of execution not implemented due to time constraints
+\item GUI has scope for improvement, as with all user interfaces
+\item System should be able to self-host
+\item Ability to link against external C libraries to allow for running of user code without needing to sandbox the entire codebase
+\end{itemize}
 
 \chapter{Technical Documentation}
-Chunks of the specification should go here; it's mostly documentation anyway.
 \section{Altitude Virtual Machine}
 
 \subsection{Definitions}
@@ -191,6 +206,9 @@ A brief summary then: a patch in the context of the virtual machine is a differe
 One of the most useful and brilliant things about patches is that because they represent differences they can can be merged together to form a larger patch, still going between two notional states, but this time, those states are not adjacent in the actual execution of the program. This built-in compression of sorts is very useful, because, for example, you might not want to keep patches for each recursive step of a heavily recursive function, which might make thousands of recursive calls, but you do want to be able to step back over the computation. It's possible to simply merge each patch created as a recursive call executes with the patch taken as the function is first called, and you'll have a patch that goes straight from function call to result.
 
 Some interesting relationships fall out of this model of execution, namely: patches form a group, in the abstract algebraic sense. We have an associative operation (merging), an identity (the null patch), and an inverse (reversing the patch).
+
+\section{CIL Compiler \& S-Expression Intermediate Language}
+
 
 \section{Altitude User Interface}
 Okay, so - the following is the protocol used by the UI when interacting with the VM as I see it. All commands and data are passed between the processes on stdin/stdout.
