@@ -1,7 +1,7 @@
-# 1 "/home/stephen/projects/altitude/code/trunk/vm/programs/mem.c"
+# 1 "/home/nox/Code/altitude/trunk/vm/programs/mem.c"
 # 1 "<built-in>"
 # 1 "<command-line>"
-# 1 "/home/stephen/projects/altitude/code/trunk/vm/programs/mem.c"
+# 1 "/home/nox/Code/altitude/trunk/vm/programs/mem.c"
 void* __altitude_malloc(int);
 
 
