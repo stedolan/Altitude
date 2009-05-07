@@ -32,6 +32,10 @@
 \contentsline {subsubsection}{In S-Expression form for the VM loader}{17}
 \contentsline {subsubsection}{In literal bytecode form, opcodes mapped to tags for display}{18}
 \contentsline {section}{\numberline {2.4}Altitude User Interface}{20}
-\contentsline {subsection}{\numberline {2.4.1}Startup}{20}
-\contentsline {subsection}{\numberline {2.4.2}Commands}{20}
-\contentsline {subsection}{\numberline {2.4.3}Errors and Warnings}{21}
+\contentsline {subsection}{\numberline {2.4.1}Description}{20}
+\contentsline {subsection}{\numberline {2.4.2}Implementation}{20}
+\contentsline {subsection}{\numberline {2.4.3}UI-VM Command Protocol}{20}
+\contentsline {subsubsection}{Startup}{20}
+\contentsline {subsubsection}{Commands}{20}
+\contentsline {subsubsection}{Errors and Warnings}{21}
+\contentsline {subsubsection}{Screenshot of the UI in action}{21}

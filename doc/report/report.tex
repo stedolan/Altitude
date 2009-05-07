@@ -530,16 +530,21 @@ Function <main>:
 \end{verbatim}
 
 \section{Altitude User Interface}
-FIXME: description, implementation, screenshots, Protocol, possiby location information spiel - line highlighting?
-Okay, so - the following is the protocol used by the UI when interacting with the VM as I see it. All commands and data are passed between the processes on stdin/stdout.
-\subsection{Startup}
+
+\subsection{Description}
+
+\subsection{Implementation}
+
+\subsection{UI-VM Command Protocol}
+The following is the protocol used by the UI when interacting with the VM. All commands and data are passed between the processes on stdin/stdout.
+\subsubsection{Startup}
 User starts by selecting a C source code file. This file is passed to altitude as an argument:
 
-UI exec's new process: "altitude code/test/test.c" (maybe we use a switch or something, not important until it's written)
+UI 'exec's a new process: "altitude code/test/test.c"
 
 At this point, altitude should parse/convert to bytecode and sit and wait - we want to set breakpoints etc. before running the code.
 
-\subsection{Commands}
+\subsubsection{Commands}
 
 When we want to run forward to the next breakpoint, we send 'run'
 
@@ -570,13 +575,11 @@ This should return variable list in the following format
 \item varlist = var [newline var]
 \item newline = newline, return or return-newline
 \item var = primtype varname value
-\item primtype = char  int  ... allllllll the other varitions of (un)signed long long / short int
+\item primtype = char  int ... any of the other variations of integer types
 \item value = any single char for a char  any integer for an int (or one of the variations)
 \end{itemize}
 
-That's just primite types... structs, unions and arrays are a whole other kettle of text.
-
-\subsection{Errors and Warnings}
+\subsubsection{Errors and Warnings}
 
 Errors and warnings are passed from altitude on stderr.
 
@@ -587,5 +590,7 @@ message may contain a reference in the form \lstinline{@filename:lineno:byteoffs
 
 
 Altitude will display this on its error console, and if it is a crash-worthy error, the program will alert the user explicitly.
+
+\subsubsection{Screenshot of the UI in action}
 
 \end{document}
