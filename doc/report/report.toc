@@ -38,4 +38,4 @@
 \contentsline {subsubsection}{Startup}{20}
 \contentsline {subsubsection}{Commands}{20}
 \contentsline {subsubsection}{Errors and Warnings}{21}
-\contentsline {subsubsection}{Screenshot of the UI in action}{21}
+\contentsline {subsubsection}{Screenshot of the UI in action}{22}
