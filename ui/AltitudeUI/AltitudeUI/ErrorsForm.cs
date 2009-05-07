@@ -11,6 +11,8 @@ namespace AltitudeUI
 {
     public partial class ErrorsForm : Form
     {
+        private delegate void AddItem(ListViewItem item);
+
         public ErrorsForm()
         {
             InitializeComponent();
@@ -38,8 +40,20 @@ namespace AltitudeUI
                 item.ForeColor = Color.DarkRed;
                 item.BackColor = Color.Yellow;
             }
-            
-            this.listViewErrors.Items.Add(item);
+
+            this.listview_add(item);
+        }
+
+        private void listview_add(ListViewItem item)
+        {
+            if (this.listViewErrors.InvokeRequired)
+            {
+                this.listViewErrors.Invoke(new AddItem(listview_add), item);
+            }
+            else
+            {
+                this.listViewErrors.Items.Add(item);
+            }
         }
     }
 

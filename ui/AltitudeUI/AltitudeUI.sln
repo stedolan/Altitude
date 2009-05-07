@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AltitudeUI", "AltitudeUI\AltitudeUI.csproj", "{92A62A5D-26FF-45C4-B298-4583FC19219B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "teststdout", "teststdout\teststdout.csproj", "{ABFE8353-B50E-4198-B542-653C976C4458}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -13,6 +15,10 @@ Global
 		{92A62A5D-26FF-45C4-B298-4583FC19219B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{92A62A5D-26FF-45C4-B298-4583FC19219B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{92A62A5D-26FF-45C4-B298-4583FC19219B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ABFE8353-B50E-4198-B542-653C976C4458}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ABFE8353-B50E-4198-B542-653C976C4458}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ABFE8353-B50E-4198-B542-653C976C4458}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ABFE8353-B50E-4198-B542-653C976C4458}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

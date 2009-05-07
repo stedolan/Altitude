@@ -1,0 +1,5 @@
+E:\mark\altitude\trunk\ui\AltitudeUI\teststdout\bin\Release\teststdout.exe
+E:\mark\altitude\trunk\ui\AltitudeUI\teststdout\bin\Release\teststdout.pdb
+E:\mark\altitude\trunk\ui\AltitudeUI\teststdout\obj\Release\ResolveAssemblyReference.cache
+E:\mark\altitude\trunk\ui\AltitudeUI\teststdout\obj\Release\teststdout.exe
+E:\mark\altitude\trunk\ui\AltitudeUI\teststdout\obj\Release\teststdout.pdb

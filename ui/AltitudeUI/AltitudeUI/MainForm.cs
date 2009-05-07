@@ -38,7 +38,11 @@ namespace AltitudeUI
             this.errorsform.Location = new Point(this.Location.X + this.Width + 5, this.Location.Y);
             this.errorsform.Height = this.Height + 5 + this.consoleform.Height;
 
-            //this.errorsform.add_error(new VMError(223, false, new loc_info(), "test!")); // test error msg
+            loc_info l = new loc_info();
+            l.filename = "simple.c";
+            l.lineno = 42;
+            l.bytecodepos = -1;
+            this.errorsform.add_error(new VMError(223, false, l, "Invalid memory access")); // test error msg
         }
 
         void altitude_vm_OutputDataReceived(object sender, DataReceivedEventArgs e)
@@ -48,6 +52,10 @@ namespace AltitudeUI
             string reg_message = @"(?<message>.*)";
 
             string output = e.Data;
+            if (output == null)
+            {
+                return;
+            }
 
             Match is_err = Regex.Match(output, reg_err, RegexOptions.Compiled);
             if (is_err.Success) // is an error message
