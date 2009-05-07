@@ -1,6 +1,6 @@
 \chapter{Compiler}
 \section{CIL}
-To perform the work of parsing and typechecking, we are using the CIL (C Intermediate Language) library, from Berkeley University. It parses C source and does some transformation to reduce the set of constructs down to a manageable amount, by introduction temporary variables, etc.
+To perform the work of parsing and typechecking, we are using the CIL (C Intermediate Language) library, from Berkeley University. It parses C source and does some transformation to reduce the set of constructs down to a manageable amount, by introduction of temporary variables, etc.
 
 For instance, after CIL transforms the source, each assignment has as its right-hand-side either a single function call, or a side-effect-free expression. Complex expressions such as {\tt a = f() + g()} are transformed down to this form by the introduction of temporaries.
 
