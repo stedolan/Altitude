@@ -76,12 +76,16 @@ When this document speaks about "types", or "the type system", it is talking not
 
 
 \subsection{VM Structure}
-Structurally this VM is a stack machine, which means that the program's memory is laid out in a stack, and code operates upon that stack, pushing and pulling results onto and off of it at will. The stack in our VM, however, is a stack of typed elements, and type checking is done along with other sanity checks every time an operation is performed on the stack. For example, the operation of addition of two unsigned integers will check that there are at least two elements on the stack, that they are both of the correct type for the operation, and that the operation will not overflow when attempted. Overflow detection in particular is tricky, since C has different overflow rules for certain types of data.
+Structurally this VM is a stack machine. The is a ``stack'', which is used to store all of the intermediate values of a computation. For instance, the complex expression 2 + (5 * 7) compiles down into the sequence of instructions ``push 2 onto the stack, push 5, push 7, multiply the top 2 and push the result, add the top 2 and push the result''. For access to memory, there are also instructions to push local or global variables onto the stack, and to manipulate pointers.
+
+The stack is typed, and many operations have built-in sanity checks, for instance, Altitude will check for overflow whenever two integers (of any integer type) are added.
 
 \subsubsection{Use of Pointers}
 In this VM, pointers are used heavily as a means of abstraction. Pointers are explained in detail in later sections of this document, so for now it will suffice to say that in Altitude, what corresponds to a pointer in the context of the user's program has lots of metadata associated with it in the VM to effectively diagnose problems. Pointers are used to abstract upon fundamental operations, since a lot of such operations fit nicely into a model where a pointer is pushed onto the stack, and an operation is performed upon it. Since we had to implement pointers for the rest of C, we decided to use them as much as we could to reduce the cost of implementing them, and found that we got lots of behaviour that would otherwise have had to have been special-cased out for free!
 
 For example, to call a function, the VM pushes a pointer to that function onto the stack, and then calls the function through the pointer. This means that function pointers in C can be expressed directly in terms of VM-level pointers, since the mechanism is the same in both contexts. Pointers are also used for local variable access: a pointer to the variable in question is pushed onto the stack and dereferenced to obtain the value of the variable. All operations on that variable in user code become operations on a VM-pointer to the variable when compiled into bytecode. Of course, the VM's pointer implementation is used to represent plain old C pointers as well.
+
+Altitude has no instructions to read or write to a local variable, you simply load the address of it (as a pointer), and then you can use the standard pointer instructions to dereference it or assign through it.
 
 \subsection{Journey of a Program}
 
